@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { Navigation } from './components/Navigation';
 
 export const metadata: Metadata = {
-  title: 'イーオンズ・エンド サプライランダマイザ',
-  description: 'イーオンズ・エンドのサプライをランダム生成します',
+  title: {
+    default: 'イーオンズ・エンド ツール',
+    template: '%s | イーオンズ・エンド',
+  },
+  description: 'イーオンズ・エンドのサプライ・カード・ネメシス・プレイヤーを扱う非公式ユーティリティ',
 };
 
 export default function RootLayout({
@@ -13,7 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <Navigation />
+        {children}
+      </body>
     </html>
   );
 }
