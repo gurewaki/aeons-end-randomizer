@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { Card } from '../../lib/types';
 import { CARD_TYPE_LABEL } from '../../lib/types';
 import { getExpansion } from '../../lib/data';
@@ -14,9 +15,36 @@ const TYPE_BADGE: Record<Card['type'], string> = {
   Spell: 'bg-yellow-500/20 text-yellow-200 border-yellow-500/40',
 };
 
+function splitOrSegments(effect: string): string[] {
+  const lines = effect.split('\n');
+  const segments: string[] = [];
+  let buf: string[] = [];
+  for (const line of lines) {
+    if (line.trim() === 'または') {
+      segments.push(buf.join('\n').trim());
+      buf = [];
+    } else {
+      buf.push(line);
+    }
+  }
+  segments.push(buf.join('\n').trim());
+  return segments.filter((s) => s.length > 0);
+}
+
+function OrDivider() {
+  return (
+    <div className="my-1.5 flex items-center gap-2">
+      <span className="h-px flex-1 bg-slate-600/80" />
+      <span className="text-[10px] tracking-widest text-slate-400">または</span>
+      <span className="h-px flex-1 bg-slate-600/80" />
+    </div>
+  );
+}
+
 export function CardTile({ card }: { card: Card }) {
   const expansion = getExpansion(card.expansionId);
   const expansionLabel = expansion?.badge ?? expansion?.name ?? card.expansionId;
+  const segments = card.effect ? splitOrSegments(card.effect) : [];
 
   return (
     <div
@@ -36,10 +64,15 @@ export function CardTile({ card }: { card: Card }) {
         </span>
       </div>
       <div className="text-base font-bold text-slate-50">{card.name}</div>
-      {card.effect && (
-        <p className="mt-1 text-xs leading-relaxed text-slate-300">
-          {card.effect}
-        </p>
+      {segments.length > 0 && (
+        <div className="mt-1 text-xs leading-relaxed text-slate-300">
+          {segments.map((seg, i) => (
+            <Fragment key={i}>
+              {i > 0 && <OrDivider />}
+              <p className="whitespace-pre-line">{seg}</p>
+            </Fragment>
+          ))}
+        </div>
       )}
     </div>
   );

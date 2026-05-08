@@ -40,6 +40,14 @@ cards:
     type: Relic
     cost: 5
     effect: "捨て札の呪文 1 枚を準備済みにする。"
+  - id: chaos-arbiter
+    name: 混沌の調停者
+    type: Relic
+    cost: 4
+    effect: |-
+      2 エーテルを得る。
+      または
+      手札 1 枚を捨てる。そうしたなら、チャージ 2 を得る。
 
   # ---- Spell (呪文) ----
   - id: spark
