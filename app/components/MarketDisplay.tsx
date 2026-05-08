@@ -1,20 +1,28 @@
-import type { MarketSupply } from '../../lib/types';
+import type { Card, MarketSupply } from '../../lib/types';
 import { CardTile } from './CardTile';
 
-function Section({
+function sortByCost<T extends Card>(cards: readonly T[]): T[] {
+  return [...cards].sort((a, b) => {
+    if (a.cost !== b.cost) return a.cost - b.cost;
+    return a.name.localeCompare(b.name, 'ja');
+  });
+}
+
+function Section<T extends Card>({
   title,
   cards,
 }: {
   title: string;
-  cards: MarketSupply['gems'] | MarketSupply['relics'] | MarketSupply['spells'];
+  cards: readonly T[];
 }) {
+  const sorted = sortByCost(cards);
   return (
     <section>
       <h3 className="mb-2 text-sm font-semibold tracking-wide text-slate-300">
-        {title} ({cards.length})
+        {title} ({sorted.length})
       </h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
+        {sorted.map((c) => (
           <CardTile key={c.id} card={c} />
         ))}
       </div>
