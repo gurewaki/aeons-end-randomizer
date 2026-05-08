@@ -63,9 +63,11 @@ export function CardTile({ card }: { card: Card }) {
           コスト {card.cost}
         </span>
       </div>
-      <div className="text-base font-bold text-slate-50">{card.name}</div>
+      <div className="text-xl font-bold leading-snug text-slate-50">
+        {card.name}
+      </div>
       {segments.length > 0 && (
-        <div className="mt-1 text-xs leading-relaxed text-slate-300">
+        <div className="mt-1.5 text-xs leading-relaxed text-slate-300">
           {segments.map((seg, i) => (
             <Fragment key={i}>
               {i > 0 && <OrDivider />}
