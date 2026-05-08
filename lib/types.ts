@@ -48,8 +48,10 @@ export interface Expansion {
 }
 
 export interface RandomizerOptions {
-  requireCost3Gem: boolean;
+  requireLowCostGem: boolean;
 }
+
+export const LOW_COST_GEM_THRESHOLD = 3;
 
 export interface MarketSupply {
   gems: Gem[];

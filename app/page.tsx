@@ -14,7 +14,7 @@ export default function Page() {
   const [selectedExpansionIds, setSelectedExpansionIds] = useState<Set<string>>(
     () => new Set(EXPANSIONS.map((e) => e.id)),
   );
-  const [requireCost3Gem, setRequireCost3Gem] = useState(false);
+  const [requireLowCostGem, setRequireLowCostGem] = useState(true);
   const [market, setMarket] = useState<MarketSupply | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export default function Page() {
     const pool = EXPANSIONS.filter((e) => selectedExpansionIds.has(e.id))
       .flatMap((e) => e.cards);
     try {
-      setMarket(generateMarket(pool, { requireCost3Gem }));
+      setMarket(generateMarket(pool, { requireLowCostGem }));
     } catch (e) {
       setMarket(null);
       setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
@@ -50,8 +50,8 @@ export default function Page() {
           onChange={setSelectedExpansionIds}
         />
         <OptionsPanel
-          requireCost3Gem={requireCost3Gem}
-          onChange={setRequireCost3Gem}
+          requireLowCostGem={requireLowCostGem}
+          onChange={setRequireLowCostGem}
         />
         <GenerateButton disabled={!canGenerate} onClick={handleGenerate} />
         <ErrorBanner message={error} />

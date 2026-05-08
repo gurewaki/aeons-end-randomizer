@@ -6,6 +6,7 @@ import type {
   MarketSupply,
   RandomizerOptions,
 } from '../types';
+import { LOW_COST_GEM_THRESHOLD } from '../types';
 import { shuffle } from './shuffle';
 import { InsufficientPoolError } from './errors';
 
@@ -31,18 +32,18 @@ export function generateMarket(
   const spellsPool = deduped.filter((c): c is Spell => c.type === 'Spell');
 
   let gems: Gem[];
-  if (options.requireCost3Gem) {
-    const cost3 = gemsPool.filter((g) => g.cost === 3);
-    if (cost3.length < 1) {
-      throw new InsufficientPoolError('Cost3Gem', 1, 0);
+  if (options.requireLowCostGem) {
+    const lowCost = gemsPool.filter((g) => g.cost <= LOW_COST_GEM_THRESHOLD);
+    if (lowCost.length < 1) {
+      throw new InsufficientPoolError('LowCostGem', 1, 0);
     }
     if (gemsPool.length < 3) {
       throw new InsufficientPoolError('Gem', 3, gemsPool.length);
     }
-    const picked3 = shuffle(cost3)[0];
-    const rest = gemsPool.filter((g) => g.id !== picked3.id);
+    const pickedLow = shuffle(lowCost)[0];
+    const rest = gemsPool.filter((g) => g.id !== pickedLow.id);
     const picked2 = shuffle(rest).slice(0, 2);
-    gems = shuffle([picked3, ...picked2]);
+    gems = shuffle([pickedLow, ...picked2]);
   } else {
     if (gemsPool.length < 3) {
       throw new InsufficientPoolError('Gem', 3, gemsPool.length);

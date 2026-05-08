@@ -48,10 +48,10 @@ export const fxSpells: Spell[] = [
 
 export const fxPool: Card[] = [...fxGems, ...fxRelics, ...fxSpells];
 
-export const poolWithoutCost3Gem: Card[] = [
-  gem('g1', '宝石A', 2),
-  gem('g2', '宝石B', 4),
-  gem('g3', '宝石C', 5),
+export const poolWithoutLowCostGem: Card[] = [
+  gem('hi1', '宝石X', 4),
+  gem('hi2', '宝石Y', 4),
+  gem('hi3', '宝石Z', 5),
   ...fxRelics,
   ...fxSpells,
 ];
