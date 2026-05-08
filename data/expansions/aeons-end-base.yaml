@@ -75,6 +75,13 @@ cards:
     type: Spell
     cost: 2
     effect: "詠唱: 1 ダメージ。カードを 1 枚引く。"
+  - id: temporal-rift
+    name: 時空の裂け目
+    type: Spell
+    cost: 5
+    effect: |-
+      セット中: 自分のターンのメインフェイズ中に 1 回のみ、そのターンにプレイした宝石カード 1 枚を自分の手札に戻しても良い。
+      キャスト: 4 ダメージを与える。
 
 mages: []
 nemeses: []
