@@ -11,9 +11,11 @@ function sortByCost<T extends Card>(cards: readonly T[]): T[] {
 function Section<T extends Card>({
   title,
   cards,
+  mustUseIds,
 }: {
   title: string;
   cards: readonly T[];
+  mustUseIds: ReadonlySet<string>;
 }) {
   const sorted = sortByCost(cards);
   return (
@@ -23,14 +25,20 @@ function Section<T extends Card>({
       </h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((c) => (
-          <CardTile key={c.id} card={c} />
+          <CardTile key={c.id} card={c} isMustUse={mustUseIds.has(c.id)} />
         ))}
       </div>
     </section>
   );
 }
 
-export function MarketDisplay({ market }: { market: MarketSupply | null }) {
+export function MarketDisplay({
+  market,
+  mustUseIds,
+}: {
+  market: MarketSupply | null;
+  mustUseIds: ReadonlySet<string>;
+}) {
   if (!market) {
     return (
       <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
@@ -40,9 +48,9 @@ export function MarketDisplay({ market }: { market: MarketSupply | null }) {
   }
   return (
     <div className="space-y-6">
-      <Section title="宝石" cards={market.gems} />
-      <Section title="遺物" cards={market.relics} />
-      <Section title="呪文" cards={market.spells} />
+      <Section title="宝石" cards={market.gems} mustUseIds={mustUseIds} />
+      <Section title="遺物" cards={market.relics} mustUseIds={mustUseIds} />
+      <Section title="呪文" cards={market.spells} mustUseIds={mustUseIds} />
     </div>
   );
 }

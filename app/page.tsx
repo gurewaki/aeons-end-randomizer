@@ -20,6 +20,9 @@ export default function Page() {
     () => new Set(),
   );
   const [market, setMarket] = useState<MarketSupply | null>(null);
+  const [marketMustUseIds, setMarketMustUseIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const allCardsById = useMemo(() => {
@@ -41,9 +44,12 @@ export default function Page() {
     const pool = [...selectedCards, ...mustUseExtra];
 
     try {
-      setMarket(
-        generateMarket(pool, { requireLowCostGem, mustUseCardIds }),
-      );
+      const generated = generateMarket(pool, {
+        requireLowCostGem,
+        mustUseCardIds,
+      });
+      setMarket(generated);
+      setMarketMustUseIds(new Set(mustUseCardIds));
     } catch (e) {
       setMarket(null);
       setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
@@ -83,7 +89,7 @@ export default function Page() {
       </div>
 
       <div className="mt-10">
-        <MarketDisplay market={market} />
+        <MarketDisplay market={market} mustUseIds={marketMustUseIds} />
       </div>
     </main>
   );

@@ -41,14 +41,22 @@ function OrDivider() {
   );
 }
 
-export function CardTile({ card }: { card: Card }) {
+export function CardTile({
+  card,
+  isMustUse = false,
+}: {
+  card: Card;
+  isMustUse?: boolean;
+}) {
   const expansion = getExpansion(card.expansionId);
   const expansionLabel = expansion?.badge ?? expansion?.name ?? card.expansionId;
   const segments = card.effect ? splitOrSegments(card.effect) : [];
 
+  const ringClass = isMustUse ? 'ring-2 ring-emerald-400/70' : '';
+
   return (
     <div
-      className={`rounded-md border p-3 shadow-sm ${TYPE_STYLES[card.type]}`}
+      className={`rounded-md border p-3 shadow-sm ${TYPE_STYLES[card.type]} ${ringClass}`}
     >
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span
@@ -59,6 +67,14 @@ export function CardTile({ card }: { card: Card }) {
         <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
           {expansionLabel}
         </span>
+        {isMustUse && (
+          <span
+            className="rounded border border-emerald-400/60 bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-200"
+            title="必ず使用に指定したカード"
+          >
+            ★ 指定
+          </span>
+        )}
         <span className="ml-auto text-sm font-semibold text-slate-200">
           コスト {card.cost}
         </span>
