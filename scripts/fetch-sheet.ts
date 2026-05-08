@@ -16,7 +16,7 @@ const OUT_DIR = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');
 mkdirSync(OUT_DIR, { recursive: true });
 
 async function fetchTab(name: string): Promise<string> {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
   return await res.text();

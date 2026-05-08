@@ -72,5 +72,22 @@ cards:
     cost: 5
     effect: "キャスト：4ダメージを与える。ネメシスデッキから出たミニオンがこのダメージによって捨てられたら、仲間1人はチャージ2を得る。"
 
-mages: []
-nemeses: []
+mages:
+  - id: NA-END-92
+    name: インディラ
+    job: 破孔魔術師の弟子
+  - id: NA-END-93
+    name: レムナント
+    job: エーテル体
+
+nemeses:
+  - id: NA-END-117
+    name: 三度死せる預言者
+    level: 5
+    battle: 2
+    rule: "<三度死せる預言者> と戦う。"
+  - id: NA-END-128
+    name: レイスモンガー
+    level: 6
+    battle: 4
+    rule: "<レイスモンガー> と戦う。"

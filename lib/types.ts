@@ -30,12 +30,17 @@ export interface Mage {
   id: string;
   expansionId: string;
   name: string;
+  job: string;
+  level?: number;
 }
 
 export interface Nemesis {
   id: string;
   expansionId: string;
   name: string;
+  level?: number;
+  battle: number;
+  rule: string;
 }
 
 export interface Expansion {

@@ -162,5 +162,50 @@ cards:
       セット中：自分のターンのメインフェイズ中、2エーテルを消費してもよい。そうしたなら、プレイヤー1人がセットしている呪文をキャストする。
       キャスト：4ダメージを与える。
 
-mages: []
-nemeses: []
+mages:
+  - id: NA-END-70
+    name: アーデルハイム
+    job: 破孔魔術師の鍛冶屋
+  - id: NA-END-71
+    name: ブラマ
+    job: 長老
+  - id: NA-END-72
+    name: ジアン
+    job: 孤児
+  - id: NA-END-73
+    name: カディア
+    job: 探索者
+  - id: NA-END-74
+    name: ラッシュ
+    job: 斥候
+  - id: NA-END-75
+    name: ミスト
+    job: ダガーキャプテン
+  - id: NA-END-76
+    name: フェドラクサ
+    job: 予言者
+  - id: NA-END-77
+    name: ザクソス
+    job: 熟練者
+
+nemeses:
+  - id: NA-END-110
+    name: レイジボーン
+    level: 2
+    battle: 1
+    rule: "<レイジボーン> と戦う。"
+  - id: NA-END-112
+    name: 甲殻の女王
+    level: 3
+    battle: 1
+    rule: "<甲殻の女王> と戦う。"
+  - id: NA-END-119
+    name: 歪んだ仮面
+    level: 5
+    battle: 2
+    rule: "<歪んだ仮面> と戦う。"
+  - id: NA-END-120
+    name: 暴食の公子
+    level: 5
+    battle: 2
+    rule: "<暴食の公子> と戦う。"

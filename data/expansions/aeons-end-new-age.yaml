@@ -149,5 +149,58 @@ cards:
       セット中：自分のターンのメインフェイズ中に1回だけ、自分がチャージを得たら仲間1人はチャージ2を得る。
       キャスト：5ダメージを与える。
 
-mages: []
-nemeses: []
+mages:
+  - id: NA-END-102
+    name: クラウディア
+    job: 試掘者
+    level: 5
+  - id: NA-END-103
+    name: ガイガー
+    job: 潮流を支配する者
+    level: 3
+  - id: NA-END-104
+    name: ロスト
+    job: 歩く火炉
+    level: 5
+  - id: NA-END-105
+    name: リーア
+    job: 遺物ハンター
+    level: 6
+  - id: NA-END-106
+    name: サハラ
+    job: 神託者
+    level: 3
+  - id: NA-END-107
+    name: ソスケル
+    job: 貴族
+    level: 4
+  - id: NA-END-108
+    name: タリクス
+    job: 鎖の僕
+    level: 6
+  - id: NA-END-109
+    name: タクレン
+    job: 盾
+    level: 2
+
+nemeses:
+  - id: NA-END-131
+    name: 魔蛆
+    level: 3
+    battle: 1
+    rule: "<魔蛆> と戦う。"
+  - id: NA-END-132
+    name: アラクノス
+    level: 4
+    battle: 2
+    rule: "<アラクノス> と戦う。"
+  - id: NA-END-133
+    name: 永遠に歩く者
+    level: 5
+    battle: 3
+    rule: "<永遠に歩く者> と戦う。"
+  - id: NA-END-134
+    name: フェンリクス
+    level: 7
+    battle: 4
+    rule: "<フェンリクス> と戦う。"
