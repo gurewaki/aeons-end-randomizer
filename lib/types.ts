@@ -41,6 +41,7 @@ export interface Nemesis {
 export interface Expansion {
   id: string;
   name: string;
+  badge?: string;
   cards: Card[];
   mages: Mage[];
   nemeses: Nemesis[];

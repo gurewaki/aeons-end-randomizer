@@ -1,5 +1,6 @@
 id: aeons-end-base
-name: Aeons End 本体
+name: イーオンズ・エンド
+badge: 基本
 cards:
   # ---- Gem (宝石) ----
   - id: jade

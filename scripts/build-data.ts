@@ -18,6 +18,7 @@ type RawCard = {
 type RawExpansion = {
   id: string;
   name: string;
+  badge?: string;
   cards: RawCard[];
   mages?: unknown[];
   nemeses?: unknown[];
@@ -67,6 +68,7 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
   return {
     id: r.id,
     name: r.name,
+    badge: typeof r.badge === 'string' ? r.badge : undefined,
     cards,
     mages: Array.isArray(r.mages) ? r.mages : [],
     nemeses: Array.isArray(r.nemeses) ? r.nemeses : [],
@@ -96,6 +98,7 @@ function main() {
   const data = expansions.map((e) => ({
     id: e.id,
     name: e.name,
+    badge: e.badge,
     cards: e.cards.map((c) => ({
       id: `${e.id}:${c.id}`,
       expansionId: e.id,

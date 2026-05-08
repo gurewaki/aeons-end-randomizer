@@ -16,7 +16,7 @@ const TYPE_BADGE: Record<Card['type'], string> = {
 
 export function CardTile({ card }: { card: Card }) {
   const expansion = getExpansion(card.expansionId);
-  const expansionLabel = expansion?.name ?? card.expansionId;
+  const expansionLabel = expansion?.badge ?? expansion?.name ?? card.expansionId;
 
   return (
     <div
