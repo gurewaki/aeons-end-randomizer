@@ -12,7 +12,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "fetch:sheet": "tsx scripts/fetch-sheet.ts",
+    "diff:sheet": "tsx scripts/diff-sheet-vs-yaml.ts",
+    "check:sheet": "npm run fetch:sheet && npm run diff:sheet"
   },
   "dependencies": {
     "next": "15.5.18",
