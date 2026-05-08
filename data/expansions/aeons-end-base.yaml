@@ -1,0 +1,72 @@
+id: aeons-end-base
+name: Aeons End 本体
+abbr: AE
+cards:
+  # ---- Gem (宝石) ----
+  - id: jade
+    name: 翡翠
+    type: Gem
+    cost: 2
+    effect: "1 エーテルを得る。"
+  - id: searing-ruby
+    name: 焼け付くルビー
+    type: Gem
+    cost: 3
+    effect: "2 エーテルを得る。獲得時、自分のエネルギーを 1 得る。"
+  - id: diamond-cluster
+    name: ダイヤモンドの群晶
+    type: Gem
+    cost: 4
+    effect: "2 エーテルを得る。"
+  - id: clouded-sapphire
+    name: 曇ったサファイア
+    type: Gem
+    cost: 5
+    effect: "3 エーテルを得る。"
+
+  # ---- Relic (遺物) ----
+  - id: temporal-helix
+    name: 時の螺旋
+    type: Relic
+    cost: 4
+    effect: "捨て札の呪文を 1 つ手札に戻す。"
+  - id: unstable-prism
+    name: 不安定なプリズム
+    type: Relic
+    cost: 3
+    effect: "2 エーテルを得る。手札を 1 枚追放してもよい。"
+  - id: focusing-orb
+    name: 集中の宝珠
+    type: Relic
+    cost: 5
+    effect: "捨て札の呪文 1 枚を準備済みにする。"
+
+  # ---- Spell (呪文) ----
+  - id: spark
+    name: スパーク
+    type: Spell
+    cost: 0
+    effect: "詠唱: 1 ダメージ。"
+  - id: ignite
+    name: 発火
+    type: Spell
+    cost: 4
+    effect: "詠唱: 2 ダメージ。今ターン他の呪文を詠唱した場合、追加で 3 ダメージ。"
+  - id: amplify-vision
+    name: 視界の増幅
+    type: Spell
+    cost: 5
+    effect: "詠唱: 3 ダメージ。獲得時、カードを 1 枚引く。"
+  - id: phoenix-flame
+    name: 不死鳥の炎
+    type: Spell
+    cost: 3
+    effect: "詠唱: 1 ダメージ。今ターン他の呪文を詠唱した場合、追加で 2 ダメージ。"
+  - id: planar-insight
+    name: 次元の洞察
+    type: Spell
+    cost: 2
+    effect: "詠唱: 1 ダメージ。カードを 1 枚引く。"
+
+mages: []
+nemeses: []
