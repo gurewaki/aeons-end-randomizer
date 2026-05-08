@@ -16,23 +16,19 @@ const TYPE_BADGE: Record<Card['type'], string> = {
 
 export function CardTile({ card }: { card: Card }) {
   const expansion = getExpansion(card.expansionId);
-  const expansionLabel = expansion?.abbr ?? expansion?.name ?? card.expansionId;
-  const expansionFull = expansion?.name ?? card.expansionId;
+  const expansionLabel = expansion?.name ?? card.expansionId;
 
   return (
     <div
       className={`rounded-md border p-3 shadow-sm ${TYPE_STYLES[card.type]}`}
     >
-      <div className="mb-1 flex items-center gap-2">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
         <span
           className={`rounded border px-2 py-0.5 text-xs font-medium ${TYPE_BADGE[card.type]}`}
         >
           {CARD_TYPE_LABEL[card.type]}
         </span>
-        <span
-          className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300"
-          title={expansionFull}
-        >
+        <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
           {expansionLabel}
         </span>
         <span className="ml-auto text-sm font-semibold text-slate-200">

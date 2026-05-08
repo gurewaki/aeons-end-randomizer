@@ -1,6 +1,5 @@
 id: aeons-end-base
 name: Aeons End 本体
-abbr: AE
 cards:
   # ---- Gem (宝石) ----
   - id: jade
