@@ -33,6 +33,7 @@ function sortCards(cards: readonly Card[]): Card[] {
 }
 
 export function MustUseCardSelector({ expansions, selected, onChange }: Props) {
+  const [sectionOpen, setSectionOpen] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
 
   const toggleSection = (id: string) => {
@@ -55,15 +56,22 @@ export function MustUseCardSelector({ expansions, selected, onChange }: Props) {
 
   return (
     <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">
-          必ず使用するカード
-          {totalSelected > 0 && (
-            <span className="ml-2 text-sm font-normal text-slate-400">
-              ({totalSelected} 枚)
-            </span>
-          )}
-        </h2>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSectionOpen(!sectionOpen)}
+          className="flex flex-1 items-center gap-2 text-left"
+        >
+          <span className="text-slate-400">{sectionOpen ? '▼' : '▶'}</span>
+          <h2 className="text-lg font-semibold text-slate-100">
+            必ず使用するカード
+            {totalSelected > 0 && (
+              <span className="ml-2 text-sm font-normal text-slate-400">
+                ({totalSelected} 枚)
+              </span>
+            )}
+          </h2>
+        </button>
         {totalSelected > 0 && (
           <button
             type="button"
@@ -74,8 +82,9 @@ export function MustUseCardSelector({ expansions, selected, onChange }: Props) {
           </button>
         )}
       </div>
-      <div className="space-y-2">
-        {expansions.map((e) => {
+      {sectionOpen && (
+        <div className="mt-3 space-y-2">
+          {expansions.map((e) => {
           const isOpen = open.has(e.id);
           const checkedCount = e.cards.filter((c) =>
             selected.has(c.id),
@@ -131,7 +140,8 @@ export function MustUseCardSelector({ expansions, selected, onChange }: Props) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

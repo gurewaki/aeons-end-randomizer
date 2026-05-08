@@ -34,7 +34,7 @@ export function MarketDisplay({ market }: { market: MarketSupply | null }) {
   if (!market) {
     return (
       <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
-        「ランダム生成」ボタンを押すとマーケットが表示されます
+        「ランダム生成」ボタンを押すとサプライが表示されます
       </div>
     );
   }

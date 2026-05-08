@@ -56,10 +56,10 @@ export default function Page() {
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
       <header className="mb-8">
         <h1 className="text-2xl font-bold text-slate-50 sm:text-3xl">
-          Aeons End マーケットランダマイザー
+          イーオンズ・エンド サプライランダマイザ
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          公式構成 (宝石 3 / 遺物 2 / 呪文 4) でマーケットをランダム生成します
+          公式構成 (宝石 3 / 遺物 2 / 呪文 4) でサプライをランダム生成します
         </p>
       </header>
 
@@ -69,14 +69,14 @@ export default function Page() {
           selected={selectedExpansionIds}
           onChange={setSelectedExpansionIds}
         />
-        <OptionsPanel
-          requireLowCostGem={requireLowCostGem}
-          onChange={setRequireLowCostGem}
-        />
         <MustUseCardSelector
           expansions={EXPANSIONS}
           selected={mustUseCardIds}
           onChange={setMustUseCardIds}
+        />
+        <OptionsPanel
+          requireLowCostGem={requireLowCostGem}
+          onChange={setRequireLowCostGem}
         />
         <GenerateButton disabled={!canGenerate} onClick={handleGenerate} />
         <ErrorBanner message={error} />
