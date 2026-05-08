@@ -30,6 +30,7 @@ export const fxGems: Gem[] = [
   gem('g3', '宝石C', 3),
   gem('g4', '宝石D', 4),
   gem('g5', '宝石E', 5),
+  gem('g6', '宝石F', 6),
 ];
 
 export const fxRelics: Relic[] = [

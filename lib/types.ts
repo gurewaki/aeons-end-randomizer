@@ -49,6 +49,7 @@ export interface Expansion {
 
 export interface RandomizerOptions {
   requireLowCostGem: boolean;
+  mustUseCardIds: ReadonlySet<string>;
 }
 
 export const LOW_COST_GEM_THRESHOLD = 3;
