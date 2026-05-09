@@ -1,21 +1,33 @@
 # Source of truth: 統合スプレッドシートの season タブ
-# ここで package 名 (= 拡張 YAML の name フィールド) から season 番号への対応を定義する
-# プロモーションなど season を持たないパッケージは、ここに記載しない (Expansion.season は undefined になる)
+# package 名 (= 拡張 YAML の name フィールド) からシーズン番号と type を定義する。
+# type:
+#   main = シーズンの大箱 (ネメシス基本カードを十分に含む)
+#   sub  = シーズンの小箱
+# プロモなど season を持たないパッケージは記載しない。
 - package: イーオンズ・エンド
   season: 1
+  type: main
 - package: イーオンズ・エンド：深層
   season: 1
+  type: sub
 - package: イーオンズ・エンド：名無きもの
   season: 1
+  type: sub
 - package: イーオンズ・エンド：終わりなき戦い
   season: 2
+  type: main
 - package: イーオンズ・エンド：虚空
   season: 2
+  type: sub
 - package: イーオンズ・エンド：外より来たりし闇
   season: 2
+  type: sub
 - package: イーオンズ・エンド：レガシー
   season: 3
+  type: main
 - package: イーオンズ・エンド：埋もれた秘密
   season: 3
+  type: sub
 - package: イーオンズ・エンド：新たな時代
   season: 4
+  type: main

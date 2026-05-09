@@ -7,13 +7,15 @@ const SRC_DIR = path.join(ROOT, 'data', 'expansions');
 const SEASONS_FILE = path.join(ROOT, 'data', 'seasons.yaml');
 const OUT_FILE = path.join(ROOT, 'lib', 'data', 'expansions.generated.ts');
 
-function loadSeasonsByPackage(): Map<string, number> {
+type SeasonInfo = { season: number; type: 'main' | 'sub' };
+
+function loadSeasonsByPackage(): Map<string, SeasonInfo> {
   const text = readFileSync(SEASONS_FILE, 'utf8');
   const raw = yaml.load(text);
   if (!Array.isArray(raw)) {
     throw new Error(`${SEASONS_FILE}: トップレベルは配列`);
   }
-  const map = new Map<string, number>();
+  const map = new Map<string, SeasonInfo>();
   raw.forEach((row, idx) => {
     if (!row || typeof row !== 'object') {
       throw new Error(`${SEASONS_FILE}: [${idx}] はオブジェクト`);
@@ -25,10 +27,15 @@ function loadSeasonsByPackage(): Map<string, number> {
     if (typeof r.season !== 'number') {
       throw new Error(`${SEASONS_FILE}: [${idx}].season は number`);
     }
+    if (r.type !== 'main' && r.type !== 'sub') {
+      throw new Error(
+        `${SEASONS_FILE}: [${idx}].type は 'main' か 'sub' (受領: ${JSON.stringify(r.type)})`,
+      );
+    }
     if (map.has(r.package)) {
       throw new Error(`${SEASONS_FILE}: package "${r.package}" が重複`);
     }
-    map.set(r.package, r.season);
+    map.set(r.package, { season: r.season, type: r.type });
   });
   return map;
 }
@@ -207,7 +214,8 @@ function main() {
     id: e.id,
     name: e.name,
     badge: e.badge,
-    season: seasonsByPackage.get(e.name),
+    season: seasonsByPackage.get(e.name)?.season,
+    type: seasonsByPackage.get(e.name)?.type,
     cards: e.cards.map((c) => ({
       id: `${e.id}:${c.id}`,
       expansionId: e.id,

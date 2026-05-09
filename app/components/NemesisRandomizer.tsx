@@ -7,20 +7,28 @@ import {
   generateNemesis,
   type NemesisMode,
 } from '../../lib/randomizer/generateNemesis';
+import {
+  generateBasicDeck,
+  NEMESIS_TIERS,
+  type BasicDeckResult,
+} from '../../lib/randomizer/generateBasicDeck';
 import { ExpansionSelector } from './ExpansionSelector';
 import { GenerateButton } from './GenerateButton';
 import { ErrorBanner } from './ErrorBanner';
+
+type PageMode = NemesisMode | 'basic';
 
 function ModeTabs({
   value,
   onChange,
 }: {
-  value: NemesisMode;
-  onChange: (m: NemesisMode) => void;
+  value: PageMode;
+  onChange: (m: PageMode) => void;
 }) {
-  const tabs: { key: NemesisMode; label: string }[] = [
-    { key: 'normal', label: '通常モード' },
-    { key: 'expedition', label: '探索行モード' },
+  const tabs: { key: PageMode; label: string }[] = [
+    { key: 'normal', label: '通常' },
+    { key: 'expedition', label: '探索行' },
+    { key: 'basic', label: '基本カード' },
   ];
   return (
     <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-1">
@@ -146,6 +154,39 @@ function BattleChipFilter({
   );
 }
 
+function EligibleSeasonsPanel({
+  eligibleSeasons,
+}: {
+  eligibleSeasons: number[];
+}) {
+  return (
+    <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+      <h2 className="mb-2 text-lg font-semibold text-slate-100">
+        抽選対象のシーズン
+      </h2>
+      {eligibleSeasons.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {eligibleSeasons.map((s) => (
+            <span
+              key={s}
+              className="rounded border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-sm font-medium text-emerald-200"
+            >
+              シーズン {s}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400">
+          各シーズンの大箱 (main パッケージ) を所有していません
+        </p>
+      )}
+      <p className="mt-2 text-xs text-slate-400">
+        各シーズンの main パッケージを所有しているシーズンが対象になります
+      </p>
+    </section>
+  );
+}
+
 function NemesisDisplay({
   result,
   mode,
@@ -197,36 +238,77 @@ function NemesisDisplay({
   );
 }
 
+function BasicDeckDisplay({ result }: { result: BasicDeckResult | null }) {
+  if (!result) {
+    return (
+      <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
+        「ランダム生成」ボタンを押すと階層ごとのシーズンが表示されます
+      </div>
+    );
+  }
+  return (
+    <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
+      <h3 className="mb-4 text-xl font-bold text-slate-50">
+        ネメシス基本カード
+      </h3>
+      <ul className="space-y-2">
+        {NEMESIS_TIERS.map((tier) => (
+          <li
+            key={tier}
+            className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/40 px-4 py-3"
+          >
+            <span className="text-base font-semibold text-slate-200">
+              階層 {tier}
+            </span>
+            <span className="rounded border border-emerald-500/60 bg-emerald-500/20 px-3 py-1 text-base font-bold text-emerald-100">
+              シーズン {result.byTier[tier]}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
 export function NemesisRandomizer() {
   const expansionsWithNemeses = useMemo(
     () => EXPANSIONS.filter((e) => e.nemeses.length > 0),
     [],
   );
 
-  // 通常モードの難易度は将来追加されるネメシスを想定して 1-10 を固定で表示
   const allLevels = useMemo(
     () => Array.from({ length: 10 }, (_, i) => i + 1),
     [],
   );
-  // 探索行モードのバトルはゲーム設計上 1-4 で固定
   const allBattles = useMemo(
     () => Array.from({ length: 4 }, (_, i) => i + 1),
     [],
   );
 
+  // 大箱 (type=main) を所有しているシーズン (= EXPANSIONS に YAML がある main)
+  const eligibleSeasons = useMemo(() => {
+    const set = new Set<number>();
+    for (const e of EXPANSIONS) {
+      if (e.type === 'main' && e.season !== undefined) set.add(e.season);
+    }
+    return [...set].sort((a, b) => a - b);
+  }, []);
+
+  const [pageMode, setPageMode] = useState<PageMode>('normal');
   const [selectedExpansionIds, setSelectedExpansionIds] = useState<Set<string>>(
     () => new Set(expansionsWithNemeses.map((e) => e.id)),
   );
-  const [mode, setMode] = useState<NemesisMode>('normal');
   const [selectedLevels, setSelectedLevels] = useState<Set<number>>(
     () => new Set(),
   );
   const [selectedBattle, setSelectedBattle] = useState<number | null>(null);
-  const [result, setResult] = useState<Nemesis | null>(null);
-  const [resultMode, setResultMode] = useState<NemesisMode>('normal');
+
+  const [nemesisResult, setNemesisResult] = useState<Nemesis | null>(null);
+  const [nemesisResultMode, setNemesisResultMode] = useState<NemesisMode>('normal');
+  const [basicResult, setBasicResult] = useState<BasicDeckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerate = () => {
+  const handleGenerateNemesis = (mode: NemesisMode) => {
     setError(null);
     const pool = EXPANSIONS.filter((e) =>
       selectedExpansionIds.has(e.id),
@@ -237,15 +319,26 @@ export function NemesisRandomizer() {
         levelFilter: mode === 'normal' ? selectedLevels : undefined,
         battleFilter: mode === 'expedition' ? selectedBattle : undefined,
       });
-      setResult(n);
-      setResultMode(mode);
+      setNemesisResult(n);
+      setNemesisResultMode(mode);
     } catch (e) {
-      setResult(null);
+      setNemesisResult(null);
       setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
     }
   };
 
-  const canGenerate = selectedExpansionIds.size > 0;
+  const handleGenerateBasic = () => {
+    setError(null);
+    try {
+      setBasicResult(generateBasicDeck(eligibleSeasons));
+    } catch (e) {
+      setBasicResult(null);
+      setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
+    }
+  };
+
+  const canGenerateNemesis = selectedExpansionIds.size > 0;
+  const canGenerateBasic = eligibleSeasons.length > 0;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
@@ -254,38 +347,62 @@ export function NemesisRandomizer() {
           ネメシスランダマイザ
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          通常モードでは難易度、探索行モードではバトルでネメシスを 1 体抽選します
+          通常 / 探索行モードはネメシス 1 体を抽選、基本カードモードは階層別にシーズンを抽選します
         </p>
       </header>
 
       <div className="space-y-4">
-        <ExpansionSelector
-          expansions={expansionsWithNemeses}
-          selected={selectedExpansionIds}
-          onChange={setSelectedExpansionIds}
-          countLabel={(e) => `${e.nemeses.length} 体`}
-          groupBySeason
-        />
-        <ModeTabs value={mode} onChange={setMode} />
-        {mode === 'normal' ? (
+        <ModeTabs value={pageMode} onChange={setPageMode} />
+
+        {pageMode !== 'basic' && (
+          <ExpansionSelector
+            expansions={expansionsWithNemeses}
+            selected={selectedExpansionIds}
+            onChange={setSelectedExpansionIds}
+            countLabel={(e) => `${e.nemeses.length} 体`}
+            groupBySeason
+          />
+        )}
+
+        {pageMode === 'normal' && (
           <LevelChipFilter
             levels={allLevels}
             selected={selectedLevels}
             onChange={setSelectedLevels}
           />
-        ) : (
+        )}
+        {pageMode === 'expedition' && (
           <BattleChipFilter
             battles={allBattles}
             selected={selectedBattle}
             onChange={setSelectedBattle}
           />
         )}
-        <GenerateButton disabled={!canGenerate} onClick={handleGenerate} />
+        {pageMode === 'basic' && (
+          <EligibleSeasonsPanel eligibleSeasons={eligibleSeasons} />
+        )}
+
+        {pageMode === 'basic' ? (
+          <GenerateButton
+            disabled={!canGenerateBasic}
+            onClick={handleGenerateBasic}
+          />
+        ) : (
+          <GenerateButton
+            disabled={!canGenerateNemesis}
+            onClick={() => handleGenerateNemesis(pageMode)}
+          />
+        )}
+
         <ErrorBanner message={error} />
       </div>
 
       <div className="mt-10">
-        <NemesisDisplay result={result} mode={resultMode} />
+        {pageMode === 'basic' ? (
+          <BasicDeckDisplay result={basicResult} />
+        ) : (
+          <NemesisDisplay result={nemesisResult} mode={nemesisResultMode} />
+        )}
       </div>
     </main>
   );

@@ -43,12 +43,16 @@ export interface Nemesis {
   rule: string;
 }
 
+export type PackageType = 'main' | 'sub';
+
 export interface Expansion {
   id: string;
   name: string;
   badge?: string;
   /** 統合スプレッドシートの season タブから派生。プロモなど未割当は undefined */
   season?: number;
+  /** シーズン内での役割。main = 大箱 (基本カードを十分に含む)、sub = 小箱 */
+  type?: PackageType;
   cards: Card[];
   mages: Mage[];
   nemeses: Nemesis[];

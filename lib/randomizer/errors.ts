@@ -83,3 +83,12 @@ export class NoMatchingNemesisError extends Error {
     this.name = 'NoMatchingNemesisError';
   }
 }
+
+export class NoEligibleSeasonError extends Error {
+  constructor() {
+    super(
+      '抽選対象のシーズンがありません。各シーズンの大箱 (main パッケージ) を所有している必要があります',
+    );
+    this.name = 'NoEligibleSeasonError';
+  }
+}

@@ -98,10 +98,16 @@ function loadYamlByName(): Map<string, { file: string; expansion: YamlExpansion 
   return out;
 }
 
-function loadSeasonsYaml(): Map<string, number> {
+type SeasonInfo = { season: number; type: 'main' | 'sub' };
+
+function loadSeasonsYaml(): Map<string, SeasonInfo> {
   const text = readFileSync(SEASONS_FILE, 'utf8');
-  const raw = yaml.load(text) as { package: string; season: number }[];
-  return new Map(raw.map((r) => [r.package, r.season]));
+  const raw = yaml.load(text) as {
+    package: string;
+    season: number;
+    type: 'main' | 'sub';
+  }[];
+  return new Map(raw.map((r) => [r.package, { season: r.season, type: r.type }]));
 }
 
 function normalize(s: string): string {
@@ -120,31 +126,40 @@ const knownPackages = new Set(yamlByName.keys());
 // ============================================================
 {
   const seasonRows = parseCsv(readFileSync(join(sheetDir, 'season.csv'), 'utf8'));
-  const sheetMap = new Map<string, number | undefined>();
+  const sheetMap = new Map<string, { season?: number; type?: string }>();
   for (const row of seasonRows) {
     const pkg = row.package;
     if (!pkg) continue;
     const s = row.season === '' ? undefined : Number(row.season);
-    sheetMap.set(pkg, s);
+    sheetMap.set(pkg, { season: s, type: row.type });
   }
-  // sheet にあって yaml に無い (s が定義されているのに yaml に無い) → diff
-  for (const [pkg, s] of sheetMap.entries()) {
-    if (s === undefined) continue; // プロモなど未割当はスキップ
-    if (!seasonsYaml.has(pkg)) {
-      console.log(`[season] YAML 欠落: package="${pkg}" season=${s}`);
+  // sheet にあって yaml に無い (season が定義されているのに yaml に無い) → diff
+  for (const [pkg, { season, type }] of sheetMap.entries()) {
+    if (season === undefined) continue; // プロモなど未割当はスキップ
+    const y = seasonsYaml.get(pkg);
+    if (!y) {
+      console.log(`[season] YAML 欠落: package="${pkg}" season=${season} type=${type}`);
       diffs++;
-    } else if (seasonsYaml.get(pkg) !== s) {
-      console.log(
-        `[season] ${pkg}: season 差分 sheet=${s} yaml=${seasonsYaml.get(pkg)}`,
-      );
+      continue;
+    }
+    if (y.season !== season) {
+      console.log(`[season] ${pkg}: season 差分 sheet=${season} yaml=${y.season}`);
+      diffs++;
+    }
+    if (type !== 'main' && type !== 'sub') {
+      console.log(`[season] ${pkg}: type が main/sub 以外 (sheet=${type})`);
+      diffs++;
+    } else if (y.type !== type) {
+      console.log(`[season] ${pkg}: type 差分 sheet=${type} yaml=${y.type}`);
       diffs++;
     }
   }
-  // yaml にあって sheet に無い (または sheet で空欄)
-  for (const [pkg, s] of seasonsYaml.entries()) {
-    const sheetVal = sheetMap.get(pkg);
-    if (sheetVal === undefined) {
-      console.log(`[season] シート欠落: package="${pkg}" yaml season=${s}`);
+  // yaml にあって sheet に無い
+  for (const [pkg, y] of seasonsYaml.entries()) {
+    if (!sheetMap.has(pkg)) {
+      console.log(
+        `[season] シート欠落: package="${pkg}" yaml season=${y.season} type=${y.type}`,
+      );
       diffs++;
     }
   }
