@@ -76,6 +76,7 @@ export function SupplyRandomizer() {
           expansions={EXPANSIONS}
           selected={selectedExpansionIds}
           onChange={setSelectedExpansionIds}
+          groupBySeason
         />
         <MustUseCardSelector
           expansions={EXPANSIONS}
