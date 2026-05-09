@@ -22,7 +22,7 @@ export function MageTile({
         </span>
         {mage.level !== undefined && (
           <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
-            Lv {mage.level}
+            難易度 {mage.level}
           </span>
         )}
         {isMustUse && (

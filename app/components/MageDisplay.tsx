@@ -1,13 +1,16 @@
 import type { Mage } from '../../lib/types';
+import { EXPANSIONS } from '../../lib/data';
 import { MageTile } from './MageTile';
 
-function sortMages(mages: readonly Mage[]): Mage[] {
-  return [...mages].sort((a, b) => {
-    const al = a.level ?? Infinity;
-    const bl = b.level ?? Infinity;
-    if (al !== bl) return al - bl;
-    return a.name.localeCompare(b.name, 'ja');
-  });
+function sortByPackage(mages: readonly Mage[]): Mage[] {
+  const ids = new Set(mages.map((m) => m.id));
+  const out: Mage[] = [];
+  for (const e of EXPANSIONS) {
+    for (const m of e.mages) {
+      if (ids.has(m.id)) out.push(m);
+    }
+  }
+  return out;
 }
 
 export function MageDisplay({
@@ -24,7 +27,7 @@ export function MageDisplay({
       </div>
     );
   }
-  const sorted = sortMages(mages);
+  const sorted = sortByPackage(mages);
   return (
     <section>
       <h3 className="mb-2 text-sm font-semibold tracking-wide text-slate-300">

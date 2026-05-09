@@ -1,21 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { Expansion, Mage } from '../../lib/types';
+import type { Expansion } from '../../lib/types';
 
 interface Props {
   expansions: readonly Expansion[];
   selected: ReadonlySet<string>;
   onChange: (next: Set<string>) => void;
-}
-
-function sortMages(mages: readonly Mage[]): Mage[] {
-  return [...mages].sort((a, b) => {
-    const al = a.level ?? Infinity;
-    const bl = b.level ?? Infinity;
-    if (al !== bl) return al - bl;
-    return a.name.localeCompare(b.name, 'ja');
-  });
 }
 
 export function MustUseMageSelector({
@@ -80,7 +71,7 @@ export function MustUseMageSelector({
             const checkedCount = e.mages.filter((m) =>
               selected.has(m.id),
             ).length;
-            const sorted = isOpen ? sortMages(e.mages) : [];
+            const sorted = isOpen ? e.mages : [];
             return (
               <div
                 key={e.id}
@@ -112,17 +103,17 @@ export function MustUseMageSelector({
                             checked={selected.has(m.id)}
                             onChange={() => toggleMage(m.id)}
                           />
-                          {m.level !== undefined && (
-                            <span className="shrink-0 text-xs text-slate-400">
-                              Lv {m.level}
-                            </span>
-                          )}
                           <span className="flex-1 truncate text-slate-200">
                             {m.name}
                           </span>
                           <span className="shrink-0 truncate text-xs text-slate-400">
                             {m.job}
                           </span>
+                          {m.level !== undefined && (
+                            <span className="shrink-0 text-xs text-slate-400">
+                              難易度 {m.level}
+                            </span>
+                          )}
                         </label>
                       </li>
                     ))}
