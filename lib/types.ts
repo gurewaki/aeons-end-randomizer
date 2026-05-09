@@ -47,6 +47,8 @@ export interface Expansion {
   id: string;
   name: string;
   badge?: string;
+  /** 統合スプレッドシートの season タブから派生。プロモなど未割当は undefined */
+  season?: number;
   cards: Card[];
   mages: Mage[];
   nemeses: Nemesis[];

@@ -4,23 +4,9 @@ import { tmpdir } from 'node:os';
 import yaml from 'js-yaml';
 
 const YAML_DIR = 'data/expansions';
-const SEASON_TABS = [
-  'シーズン1',
-  'シーズン2',
-  'シーズン3',
-  'シーズン4',
-  'プロモーション',
-];
+const SEASONS_FILE = 'data/seasons.yaml';
 
-type Row = {
-  package: string;
-  badge?: string;
-  id: string;
-  name: string;
-  type: string;
-  cost: string;
-  effect: string;
-};
+type CsvRow = Record<string, string>;
 
 type YamlCard = {
   id: string;
@@ -29,15 +15,29 @@ type YamlCard = {
   cost: number;
   effect?: string;
 };
-
+type YamlMage = {
+  id: string;
+  name: string;
+  job: string;
+  level?: number;
+};
+type YamlNemesis = {
+  id: string;
+  name: string;
+  level?: number;
+  battle: number;
+  rule: string;
+};
 type YamlExpansion = {
   id: string;
   name: string;
   badge?: string;
   cards: YamlCard[];
+  mages?: YamlMage[];
+  nemeses?: YamlNemesis[];
 };
 
-function parseCsv(text: string): Row[] {
+function parseCsv(text: string): CsvRow[] {
   const rows: string[][] = [];
   let cur: string[] = [];
   let cell = '';
@@ -74,38 +74,34 @@ function parseCsv(text: string): Row[] {
   const filtered = rows.filter((r) => r.length > 1 || r[0]);
   if (filtered.length === 0) return [];
   const [header, ...data] = filtered;
-  const idx = (n: string) => header.indexOf(n);
   return data
     .filter((r) => r.some((v) => v))
-    .map((r) => ({
-      package: r[idx('package')] ?? '',
-      badge: r[idx('badge')] ?? undefined,
-      id: r[idx('id')] ?? '',
-      name: r[idx('name')] ?? '',
-      type: r[idx('type')] ?? '',
-      cost: r[idx('cost')] ?? '',
-      effect: r[idx('effect')] ?? '',
-    }));
+    .map((r) => {
+      const obj: CsvRow = {};
+      header.forEach((h, i) => {
+        if (h) obj[h] = r[i] ?? '';
+      });
+      return obj;
+    });
 }
 
-function loadYamlByName(): Map<
-  string,
-  { file: string; expansion: YamlExpansion; cardsById: Map<string, YamlCard> }
-> {
-  const out = new Map<
-    string,
-    { file: string; expansion: YamlExpansion; cardsById: Map<string, YamlCard> }
-  >();
+function loadYamlByName(): Map<string, { file: string; expansion: YamlExpansion }> {
+  const out = new Map<string, { file: string; expansion: YamlExpansion }>();
   const files = readdirSync(YAML_DIR).filter(
     (f) => f.endsWith('.yaml') || f.endsWith('.yml'),
   );
   for (const file of files) {
     const text = readFileSync(join(YAML_DIR, file), 'utf8');
     const exp = yaml.load(text) as YamlExpansion;
-    const cardsById = new Map(exp.cards.map((c) => [c.id, c]));
-    out.set(exp.name, { file, expansion: exp, cardsById });
+    out.set(exp.name, { file, expansion: exp });
   }
   return out;
+}
+
+function loadSeasonsYaml(): Map<string, number> {
+  const text = readFileSync(SEASONS_FILE, 'utf8');
+  const raw = yaml.load(text) as { package: string; season: number }[];
+  return new Map(raw.map((r) => [r.package, r.season]));
 }
 
 function normalize(s: string): string {
@@ -114,98 +110,240 @@ function normalize(s: string): string {
 
 const sheetDir = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');
 const yamlByName = loadYamlByName();
+const seasonsYaml = loadSeasonsYaml();
 
 let diffs = 0;
+const knownPackages = new Set(yamlByName.keys());
 
-// Collect all sheet rows across all season tabs, grouped by package
-const sheetByPackage = new Map<string, Row[]>();
-for (const tab of SEASON_TABS) {
-  const csvFile = join(sheetDir, `${tab.replaceAll('：', '_').replaceAll('・', '')}.csv`);
-  const csv = readFileSync(csvFile, 'utf8');
-  const rows = parseCsv(csv);
-  for (const row of rows) {
+// ============================================================
+// 1) season tab vs data/seasons.yaml
+// ============================================================
+{
+  const seasonRows = parseCsv(readFileSync(join(sheetDir, 'season.csv'), 'utf8'));
+  const sheetMap = new Map<string, number | undefined>();
+  for (const row of seasonRows) {
+    const pkg = row.package;
+    if (!pkg) continue;
+    const s = row.season === '' ? undefined : Number(row.season);
+    sheetMap.set(pkg, s);
+  }
+  // sheet にあって yaml に無い (s が定義されているのに yaml に無い) → diff
+  for (const [pkg, s] of sheetMap.entries()) {
+    if (s === undefined) continue; // プロモなど未割当はスキップ
+    if (!seasonsYaml.has(pkg)) {
+      console.log(`[season] YAML 欠落: package="${pkg}" season=${s}`);
+      diffs++;
+    } else if (seasonsYaml.get(pkg) !== s) {
+      console.log(
+        `[season] ${pkg}: season 差分 sheet=${s} yaml=${seasonsYaml.get(pkg)}`,
+      );
+      diffs++;
+    }
+  }
+  // yaml にあって sheet に無い (または sheet で空欄)
+  for (const [pkg, s] of seasonsYaml.entries()) {
+    const sheetVal = sheetMap.get(pkg);
+    if (sheetVal === undefined) {
+      console.log(`[season] シート欠落: package="${pkg}" yaml season=${s}`);
+      diffs++;
+    }
+  }
+}
+
+// ============================================================
+// 2) card tab vs YAML.cards (per package)
+// ============================================================
+{
+  const cardRows = parseCsv(readFileSync(join(sheetDir, 'card.csv'), 'utf8'));
+  const cardsByPkg = new Map<string, CsvRow[]>();
+  for (const row of cardRows) {
     if (!row.package) {
-      console.log(`[${tab}] ${row.id}: package 空欄`);
+      console.log(`[card] ${row.id}: package 空欄`);
       diffs++;
       continue;
     }
-    const arr = sheetByPackage.get(row.package) ?? [];
+    const arr = cardsByPkg.get(row.package) ?? [];
     arr.push(row);
-    sheetByPackage.set(row.package, arr);
+    cardsByPkg.set(row.package, arr);
+  }
+
+  for (const pkg of cardsByPkg.keys()) {
+    if (!knownPackages.has(pkg)) {
+      console.log(`[card] YAML 未登録 package: "${pkg}"`);
+      diffs++;
+    }
+  }
+  for (const pkg of knownPackages) {
+    if (!cardsByPkg.has(pkg)) {
+      console.log(`[card] シート欠落 package: "${pkg}"`);
+      diffs++;
+    }
+  }
+
+  for (const [pkg, sheetRows] of cardsByPkg.entries()) {
+    const target = yamlByName.get(pkg);
+    if (!target) continue;
+    const cardsById = new Map(target.expansion.cards.map((c) => [c.id, c]));
+    const sheetIds = new Set(sheetRows.map((r) => r.id));
+
+    for (const id of sheetIds) {
+      if (!cardsById.has(id)) {
+        console.log(`[card][${pkg}] YAML 欠落: ${id}`);
+        diffs++;
+      }
+    }
+    for (const id of cardsById.keys()) {
+      if (!sheetIds.has(id)) {
+        console.log(`[card][${pkg}] シート欠落: ${id}`);
+        diffs++;
+      }
+    }
+
+    for (const sheet of sheetRows) {
+      const y = cardsById.get(sheet.id);
+      if (!y) continue;
+      if (sheet.name !== y.name) {
+        console.log(`[card][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
+        diffs++;
+      }
+      if (sheet.type !== y.type) {
+        console.log(`[card][${pkg}] ${sheet.id} type: sheet="${sheet.type}" yaml="${y.type}"`);
+        diffs++;
+      }
+      if (Number(sheet.cost) !== y.cost) {
+        console.log(`[card][${pkg}] ${sheet.id} cost: sheet="${sheet.cost}" yaml="${y.cost}"`);
+        diffs++;
+      }
+      const sE = normalize(sheet.effect ?? '');
+      const yE = normalize(y.effect ?? '');
+      if (sE !== yE) {
+        console.log(`[card][${pkg}] ${sheet.id} effect:`);
+        console.log(`  sheet: ${JSON.stringify(sE)}`);
+        console.log(`   yaml: ${JSON.stringify(yE)}`);
+        diffs++;
+      }
+    }
+
+    if (sheetRows.length > 0 && sheetRows[0].badge !== undefined) {
+      const sheetBadge = sheetRows[0].badge;
+      if (sheetBadge && sheetBadge !== target.expansion.badge) {
+        console.log(
+          `[card][${pkg}] badge: sheet="${sheetBadge}" yaml="${target.expansion.badge}"`,
+        );
+        diffs++;
+      }
+    }
   }
 }
 
-// 1) シート上に出てくる package が YAML に存在するか
-for (const pkg of sheetByPackage.keys()) {
-  if (!yamlByName.has(pkg)) {
-    console.log(`シートの package "${pkg}" に対応する YAML が見つかりません`);
-    diffs++;
+// ============================================================
+// 3) nemesis tab vs YAML.nemeses (per known package)
+// ============================================================
+{
+  const rows = parseCsv(readFileSync(join(sheetDir, 'nemesis.csv'), 'utf8'));
+  const byPkg = new Map<string, CsvRow[]>();
+  for (const row of rows) {
+    if (!row.package) continue;
+    if (!knownPackages.has(row.package)) continue; // 未登録 package は無視
+    const arr = byPkg.get(row.package) ?? [];
+    arr.push(row);
+    byPkg.set(row.package, arr);
+  }
+
+  for (const [pkg, sheetRows] of byPkg.entries()) {
+    const target = yamlByName.get(pkg)!;
+    const nemesesById = new Map(
+      (target.expansion.nemeses ?? []).map((n) => [n.id, n]),
+    );
+    const sheetIds = new Set(sheetRows.map((r) => r.id));
+    for (const id of sheetIds) {
+      if (!nemesesById.has(id)) {
+        console.log(`[nemesis][${pkg}] YAML 欠落: ${id}`);
+        diffs++;
+      }
+    }
+    for (const id of nemesesById.keys()) {
+      if (!sheetIds.has(id)) {
+        console.log(`[nemesis][${pkg}] シート欠落: ${id}`);
+        diffs++;
+      }
+    }
+    for (const sheet of sheetRows) {
+      const y = nemesesById.get(sheet.id);
+      if (!y) continue;
+      if (sheet.name !== y.name) {
+        console.log(`[nemesis][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
+        diffs++;
+      }
+      const sLevel = sheet.level === '' || sheet.level === '-' ? undefined : Number(sheet.level);
+      if (sLevel !== y.level) {
+        console.log(`[nemesis][${pkg}] ${sheet.id} level: sheet="${sLevel}" yaml="${y.level}"`);
+        diffs++;
+      }
+      if (Number(sheet.battle) !== y.battle) {
+        console.log(`[nemesis][${pkg}] ${sheet.id} battle: sheet="${sheet.battle}" yaml="${y.battle}"`);
+        diffs++;
+      }
+      const sR = normalize(sheet.rule ?? '');
+      const yR = normalize(y.rule ?? '');
+      if (sR !== yR) {
+        console.log(`[nemesis][${pkg}] ${sheet.id} rule:`);
+        console.log(`  sheet: ${JSON.stringify(sR)}`);
+        console.log(`   yaml: ${JSON.stringify(yR)}`);
+        diffs++;
+      }
+    }
   }
 }
 
-// 2) YAML 側にある package がシートで触れられているか
-for (const pkg of yamlByName.keys()) {
-  if (!sheetByPackage.has(pkg)) {
-    console.log(`YAML の package "${pkg}" がシートに含まれていません`);
-    diffs++;
-  }
-}
-
-// 3) 各 package について card 単位で diff
-for (const [pkg, sheetRows] of sheetByPackage.entries()) {
-  const target = yamlByName.get(pkg);
-  if (!target) continue; // 1 で報告済み
-
-  const sheetIds = new Set(sheetRows.map((r) => r.id));
-  const yamlIds = new Set(target.cardsById.keys());
-
-  for (const id of sheetIds) {
-    if (!yamlIds.has(id)) {
-      console.log(`[${pkg}] YAML 欠落: ${id}`);
-      diffs++;
-    }
-  }
-  for (const id of yamlIds) {
-    if (!sheetIds.has(id)) {
-      console.log(`[${pkg}] シート欠落: ${id}`);
-      diffs++;
-    }
+// ============================================================
+// 4) player tab vs YAML.mages (per known package)
+// ============================================================
+{
+  const rows = parseCsv(readFileSync(join(sheetDir, 'player.csv'), 'utf8'));
+  const byPkg = new Map<string, CsvRow[]>();
+  for (const row of rows) {
+    if (!row.package) continue;
+    if (!knownPackages.has(row.package)) continue;
+    const arr = byPkg.get(row.package) ?? [];
+    arr.push(row);
+    byPkg.set(row.package, arr);
   }
 
-  for (const sheet of sheetRows) {
-    const y = target.cardsById.get(sheet.id);
-    if (!y) continue;
-    if (sheet.name !== y.name) {
-      console.log(`[${pkg}] ${sheet.id} name 差分: sheet="${sheet.name}" yaml="${y.name}"`);
-      diffs++;
+  for (const [pkg, sheetRows] of byPkg.entries()) {
+    const target = yamlByName.get(pkg)!;
+    const magesById = new Map(
+      (target.expansion.mages ?? []).map((m) => [m.id, m]),
+    );
+    const sheetIds = new Set(sheetRows.map((r) => r.id));
+    for (const id of sheetIds) {
+      if (!magesById.has(id)) {
+        console.log(`[player][${pkg}] YAML 欠落: ${id}`);
+        diffs++;
+      }
     }
-    if (sheet.type !== y.type) {
-      console.log(`[${pkg}] ${sheet.id} type 差分: sheet="${sheet.type}" yaml="${y.type}"`);
-      diffs++;
+    for (const id of magesById.keys()) {
+      if (!sheetIds.has(id)) {
+        console.log(`[player][${pkg}] シート欠落: ${id}`);
+        diffs++;
+      }
     }
-    if (Number(sheet.cost) !== y.cost) {
-      console.log(`[${pkg}] ${sheet.id} cost 差分: sheet="${sheet.cost}" yaml="${y.cost}"`);
-      diffs++;
-    }
-    const sheetE = normalize(sheet.effect);
-    const yamlE = normalize(y.effect ?? '');
-    if (sheetE !== yamlE) {
-      console.log(`[${pkg}] ${sheet.id} effect 差分:`);
-      console.log(`  sheet: ${JSON.stringify(sheetE)}`);
-      console.log(`   yaml: ${JSON.stringify(yamlE)}`);
-      diffs++;
-    }
-  }
-
-  // 4) badge 列が YAML の badge と一致するか (カード行の最初の値で代表)
-  if (sheetRows.length > 0 && sheetRows[0].badge !== undefined) {
-    const sheetBadge = sheetRows[0].badge;
-    const yamlBadge = target.expansion.badge;
-    if (sheetBadge !== yamlBadge) {
-      console.log(
-        `[${pkg}] badge 差分: sheet="${sheetBadge}" yaml="${yamlBadge}"`,
-      );
-      diffs++;
+    for (const sheet of sheetRows) {
+      const y = magesById.get(sheet.id);
+      if (!y) continue;
+      if (sheet.name !== y.name) {
+        console.log(`[player][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
+        diffs++;
+      }
+      if (sheet.job !== y.job) {
+        console.log(`[player][${pkg}] ${sheet.id} job: sheet="${sheet.job}" yaml="${y.job}"`);
+        diffs++;
+      }
+      const sLevel = sheet.level === '' || sheet.level === '-' ? undefined : Number(sheet.level);
+      if (sLevel !== y.level) {
+        console.log(`[player][${pkg}] ${sheet.id} level: sheet="${sLevel}" yaml="${y.level}"`);
+        diffs++;
+      }
     }
   }
 }

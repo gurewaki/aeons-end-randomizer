@@ -2,16 +2,10 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+// 統合スプレッドシート (season / card / nemesis / player の 4 タブ構成)
 const SHEET_ID = '1XINA8TPodoFbw5LQv8dlbjL4JfKMCqiY0dkvkv5YrzI';
 
-// シート上のタブ名 (シーズン区切り + プロモーション)。各タブには複数 package が混在しうる
-const TABS = [
-  'シーズン1',
-  'シーズン2',
-  'シーズン3',
-  'シーズン4',
-  'プロモーション',
-];
+const TABS = ['season', 'card', 'nemesis', 'player'];
 
 const OUT_DIR = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');
 mkdirSync(OUT_DIR, { recursive: true });
@@ -23,14 +17,10 @@ async function fetchTab(name: string): Promise<string> {
   return await res.text();
 }
 
-function slug(name: string): string {
-  return name.replaceAll('：', '_').replaceAll('・', '');
-}
-
 async function main() {
   for (const tab of TABS) {
     const csv = await fetchTab(tab);
-    const file = join(OUT_DIR, `${slug(tab)}.csv`);
+    const file = join(OUT_DIR, `${tab}.csv`);
     writeFileSync(file, csv, 'utf8');
     const lines = csv.split('\n').length;
     console.log(`[${tab}] ${lines} 行 → ${file}`);

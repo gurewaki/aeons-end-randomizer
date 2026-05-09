@@ -4,7 +4,34 @@ import yaml from 'js-yaml';
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC_DIR = path.join(ROOT, 'data', 'expansions');
+const SEASONS_FILE = path.join(ROOT, 'data', 'seasons.yaml');
 const OUT_FILE = path.join(ROOT, 'lib', 'data', 'expansions.generated.ts');
+
+function loadSeasonsByPackage(): Map<string, number> {
+  const text = readFileSync(SEASONS_FILE, 'utf8');
+  const raw = yaml.load(text);
+  if (!Array.isArray(raw)) {
+    throw new Error(`${SEASONS_FILE}: トップレベルは配列`);
+  }
+  const map = new Map<string, number>();
+  raw.forEach((row, idx) => {
+    if (!row || typeof row !== 'object') {
+      throw new Error(`${SEASONS_FILE}: [${idx}] はオブジェクト`);
+    }
+    const r = row as Record<string, unknown>;
+    if (typeof r.package !== 'string') {
+      throw new Error(`${SEASONS_FILE}: [${idx}].package`);
+    }
+    if (typeof r.season !== 'number') {
+      throw new Error(`${SEASONS_FILE}: [${idx}].season は number`);
+    }
+    if (map.has(r.package)) {
+      throw new Error(`${SEASONS_FILE}: package "${r.package}" が重複`);
+    }
+    map.set(r.package, r.season);
+  });
+  return map;
+}
 
 type RawCard = {
   id: string;
@@ -174,10 +201,13 @@ function main() {
     seenExpIds.add(e.id);
   }
 
+  const seasonsByPackage = loadSeasonsByPackage();
+
   const data = expansions.map((e) => ({
     id: e.id,
     name: e.name,
     badge: e.badge,
+    season: seasonsByPackage.get(e.name),
     cards: e.cards.map((c) => ({
       id: `${e.id}:${c.id}`,
       expansionId: e.id,
@@ -213,8 +243,9 @@ function main() {
   const totalCards = data.reduce((n, e) => n + e.cards.length, 0);
   const totalMages = data.reduce((n, e) => n + e.mages.length, 0);
   const totalNemeses = data.reduce((n, e) => n + e.nemeses.length, 0);
+  const seasonAssigned = data.filter((e) => e.season !== undefined).length;
   console.log(
-    `[build-data] 生成完了: ${expansions.length} 拡張 / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} → ${path.relative(ROOT, OUT_FILE)}`,
+    `[build-data] 生成完了: ${expansions.length} 拡張 (シーズン割当 ${seasonAssigned}) / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} → ${path.relative(ROOT, OUT_FILE)}`,
   );
 }
 
