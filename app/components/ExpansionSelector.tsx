@@ -1,12 +1,20 @@
 import type { Expansion } from '../../lib/types';
 
 interface Props {
-  expansions: Expansion[];
-  selected: Set<string>;
+  expansions: readonly Expansion[];
+  selected: ReadonlySet<string>;
   onChange: (next: Set<string>) => void;
+  countLabel?: (e: Expansion) => string;
 }
 
-export function ExpansionSelector({ expansions, selected, onChange }: Props) {
+const defaultCountLabel = (e: Expansion) => `${e.cards.length} 枚`;
+
+export function ExpansionSelector({
+  expansions,
+  selected,
+  onChange,
+  countLabel = defaultCountLabel,
+}: Props) {
   const toggle = (id: string) => {
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
@@ -44,7 +52,7 @@ export function ExpansionSelector({ expansions, selected, onChange }: Props) {
               />
               <span className="font-medium text-slate-100">{e.name}</span>
               <span className="ml-auto text-xs text-slate-400">
-                {e.cards.length} 枚
+                {countLabel(e)}
               </span>
             </label>
           </li>
