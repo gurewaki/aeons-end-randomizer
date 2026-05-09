@@ -82,6 +82,7 @@ export function PlayerRandomizer() {
           selected={selectedExpansionIds}
           onChange={setSelectedExpansionIds}
           countLabel={(e) => `${e.mages.length} 人`}
+          groupBySeason
         />
         <MustUseMageSelector
           expansions={expansionsWithMages}

@@ -1,4 +1,5 @@
 import type { Expansion } from '../../lib/types';
+import { groupExpansionsBySeason, seasonLabel } from '../../lib/seasonGroup';
 
 interface Props {
   expansions: readonly Expansion[];
@@ -10,25 +11,6 @@ interface Props {
 }
 
 const defaultCountLabel = (e: Expansion) => `${e.cards.length} 枚`;
-
-function groupBySeasonFn(
-  expansions: readonly Expansion[],
-): { season: number | null; items: Expansion[] }[] {
-  const map = new Map<number | null, Expansion[]>();
-  for (const e of expansions) {
-    const key = e.season ?? null;
-    const arr = map.get(key) ?? [];
-    arr.push(e);
-    map.set(key, arr);
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => {
-      if (a === null) return 1;
-      if (b === null) return -1;
-      return a - b;
-    })
-    .map(([season, items]) => ({ season, items }));
-}
 
 function ExpansionRow({
   e,
@@ -90,10 +72,10 @@ export function ExpansionSelector({
 
       {groupBySeason ? (
         <div className="space-y-3">
-          {groupBySeasonFn(expansions).map(({ season, items }) => (
+          {groupExpansionsBySeason(expansions).map(({ season, items }) => (
             <div key={season ?? 'none'}>
               <h3 className="mb-1 text-xs font-semibold tracking-wider text-slate-400">
-                {season !== null ? `シーズン ${season}` : 'その他'}
+                {seasonLabel(season)}
               </h3>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {items.map((e) => (

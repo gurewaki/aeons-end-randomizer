@@ -106,6 +106,7 @@ export function CardList() {
           expansions={EXPANSIONS}
           selected={expansionIds}
           onChange={setExpansionIds}
+          groupBySeason
         />
 
         <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">

@@ -264,6 +264,7 @@ export function NemesisRandomizer() {
           selected={selectedExpansionIds}
           onChange={setSelectedExpansionIds}
           countLabel={(e) => `${e.nemeses.length} 体`}
+          groupBySeason
         />
         <ModeTabs value={mode} onChange={setMode} />
         {mode === 'normal' ? (

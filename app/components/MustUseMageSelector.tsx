@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Expansion } from '../../lib/types';
+import { groupExpansionsBySeason, seasonLabel } from '../../lib/seasonGroup';
 
 interface Props {
   expansions: readonly Expansion[];
@@ -65,63 +66,76 @@ export function MustUseMageSelector({
         )}
       </div>
       {sectionOpen && (
-        <div className="mt-3 space-y-2">
-          {expansionsWithMages.map((e) => {
-            const isOpen = open.has(e.id);
-            const checkedCount = e.mages.filter((m) =>
-              selected.has(m.id),
-            ).length;
-            const sorted = isOpen ? e.mages : [];
-            return (
-              <div
-                key={e.id}
-                className="rounded border border-slate-700 bg-slate-900/30"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleSection(e.id)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-slate-700/30"
-                >
-                  <span className="text-slate-400">{isOpen ? '▼' : '▶'}</span>
-                  <span className="flex-1 font-medium text-slate-100">
-                    {e.name}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {checkedCount > 0
-                      ? `${checkedCount}/${e.mages.length} 人選択中`
-                      : `${e.mages.length} 人`}
-                  </span>
-                </button>
-                {isOpen && (
-                  <ul className="grid grid-cols-1 gap-1 border-t border-slate-700 p-2 sm:grid-cols-2">
-                    {sorted.map((m) => (
-                      <li key={m.id}>
-                        <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-700/40">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 accent-emerald-500"
-                            checked={selected.has(m.id)}
-                            onChange={() => toggleMage(m.id)}
-                          />
-                          <span className="flex-1 truncate text-slate-200">
-                            {m.name}
+        <div className="mt-3 space-y-3">
+          {groupExpansionsBySeason(expansionsWithMages).map(
+            ({ season, items }) => (
+              <div key={season ?? 'none'}>
+                <h3 className="mb-1 text-xs font-semibold tracking-wider text-slate-400">
+                  {seasonLabel(season)}
+                </h3>
+                <div className="space-y-2">
+                  {items.map((e) => {
+                    const isOpen = open.has(e.id);
+                    const checkedCount = e.mages.filter((m) =>
+                      selected.has(m.id),
+                    ).length;
+                    const sorted = isOpen ? e.mages : [];
+                    return (
+                      <div
+                        key={e.id}
+                        className="rounded border border-slate-700 bg-slate-900/30"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleSection(e.id)}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-slate-700/30"
+                        >
+                          <span className="text-slate-400">
+                            {isOpen ? '▼' : '▶'}
                           </span>
-                          <span className="shrink-0 truncate text-xs text-slate-400">
-                            {m.job}
+                          <span className="flex-1 font-medium text-slate-100">
+                            {e.name}
                           </span>
-                          {m.level !== undefined && (
-                            <span className="shrink-0 text-xs text-slate-400">
-                              難易度 {m.level}
-                            </span>
-                          )}
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                          <span className="text-xs text-slate-400">
+                            {checkedCount > 0
+                              ? `${checkedCount}/${e.mages.length} 人選択中`
+                              : `${e.mages.length} 人`}
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <ul className="grid grid-cols-1 gap-1 border-t border-slate-700 p-2 sm:grid-cols-2">
+                            {sorted.map((m) => (
+                              <li key={m.id}>
+                                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-700/40">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 accent-emerald-500"
+                                    checked={selected.has(m.id)}
+                                    onChange={() => toggleMage(m.id)}
+                                  />
+                                  <span className="flex-1 truncate text-slate-200">
+                                    {m.name}
+                                  </span>
+                                  <span className="shrink-0 truncate text-xs text-slate-400">
+                                    {m.job}
+                                  </span>
+                                  {m.level !== undefined && (
+                                    <span className="shrink-0 text-xs text-slate-400">
+                                      難易度 {m.level}
+                                    </span>
+                                  )}
+                                </label>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            );
-          })}
+            ),
+          )}
         </div>
       )}
     </section>
