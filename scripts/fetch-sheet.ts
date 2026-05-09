@@ -4,11 +4,12 @@ import { tmpdir } from 'node:os';
 
 const SHEET_ID = '1XINA8TPodoFbw5LQv8dlbjL4JfKMCqiY0dkvkv5YrzI';
 
+// シート上のタブ名 (シーズン区切り + プロモーション)。各タブには複数 package が混在しうる
 const TABS = [
-  'イーオンズ・エンド',
-  'イーオンズ・エンド：外より来たりし闇',
-  'イーオンズ・エンド：埋もれた秘密',
-  'イーオンズ・エンド：新たな時代',
+  'シーズン1',
+  'シーズン2',
+  'シーズン3',
+  'シーズン4',
   'プロモーション',
 ];
 
