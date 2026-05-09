@@ -16,6 +16,7 @@ export function SupplyRandomizer() {
     () => new Set(EXPANSIONS.map((e) => e.id)),
   );
   const [requireLowCostGem, setRequireLowCostGem] = useState(true);
+  const [stratifyCost, setStratifyCost] = useState(false);
   const [mustUseCardIds, setMustUseCardIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -46,6 +47,7 @@ export function SupplyRandomizer() {
     try {
       const generated = generateMarket(pool, {
         requireLowCostGem,
+        stratifyCost,
         mustUseCardIds,
       });
       setMarket(generated);
@@ -82,7 +84,9 @@ export function SupplyRandomizer() {
         />
         <OptionsPanel
           requireLowCostGem={requireLowCostGem}
-          onChange={setRequireLowCostGem}
+          stratifyCost={stratifyCost}
+          onChangeRequireLowCostGem={setRequireLowCostGem}
+          onChangeStratifyCost={setStratifyCost}
         />
         <GenerateButton disabled={!canGenerate} onClick={handleGenerate} />
         <ErrorBanner message={error} />

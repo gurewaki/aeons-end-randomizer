@@ -54,6 +54,7 @@ export interface Expansion {
 
 export interface RandomizerOptions {
   requireLowCostGem: boolean;
+  stratifyCost: boolean;
   mustUseCardIds: ReadonlySet<string>;
 }
 

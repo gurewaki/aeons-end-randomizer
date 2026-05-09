@@ -21,6 +21,27 @@ function dedupeByName<T extends Card>(cards: T[]): T[] {
   return out;
 }
 
+/**
+ * pool から n 枚を抽選する。
+ * stratify=true: cost 昇順に並べて n 等分し、各バケットから 1 枚ずつ抽選 (層化抽選)。
+ * stratify=false: 単純シャッフル後の先頭 n 枚。
+ */
+function pickN<T extends Card>(pool: T[], n: number, stratify: boolean): T[] {
+  if (n <= 0) return [];
+  if (pool.length <= n) return shuffle(pool);
+  if (!stratify) return shuffle(pool).slice(0, n);
+
+  const sorted = [...pool].sort((a, b) => a.cost - b.cost);
+  const out: T[] = [];
+  for (let i = 0; i < n; i++) {
+    const start = Math.floor((i * sorted.length) / n);
+    const end = Math.floor(((i + 1) * sorted.length) / n);
+    const bucket = sorted.slice(start, end);
+    out.push(shuffle(bucket)[0]);
+  }
+  return out;
+}
+
 export function generateMarket(
   pool: Card[],
   options: RandomizerOptions,
@@ -51,9 +72,24 @@ export function generateMarket(
   const fillableRelics = fillable.filter((c): c is Relic => c.type === 'Relic');
   const fillableSpells = fillable.filter((c): c is Spell => c.type === 'Spell');
 
-  const gems = pickGems(mustGems, fillableGems, options.requireLowCostGem);
-  const relics = pickFixed(mustRelics, fillableRelics, 'Relic');
-  const spells = pickFixed(mustSpells, fillableSpells, 'Spell');
+  const gems = pickGems(
+    mustGems,
+    fillableGems,
+    options.requireLowCostGem,
+    options.stratifyCost,
+  );
+  const relics = pickFixed(
+    mustRelics,
+    fillableRelics,
+    'Relic',
+    options.stratifyCost,
+  );
+  const spells = pickFixed(
+    mustSpells,
+    fillableSpells,
+    'Spell',
+    options.stratifyCost,
+  );
 
   return { gems, relics, spells };
 }
@@ -62,6 +98,7 @@ function pickGems(
   must: Gem[],
   fillable: Gem[],
   requireLowCost: boolean,
+  stratify: boolean,
 ): Gem[] {
   const total = MARKET_COMPOSITION.Gem;
   const slots = total - must.length;
@@ -74,7 +111,7 @@ function pickGems(
         must.length + fillable.length,
       );
     }
-    const filled = slots > 0 ? shuffle(fillable).slice(0, slots) : [];
+    const filled = pickN(fillable, slots, stratify);
     return shuffle([...must, ...filled]);
   }
 
@@ -88,7 +125,7 @@ function pickGems(
         must.length + fillable.length,
       );
     }
-    const filled = slots > 0 ? shuffle(fillable).slice(0, slots) : [];
+    const filled = pickN(fillable, slots, stratify);
     return shuffle([...must, ...filled]);
   }
 
@@ -110,7 +147,7 @@ function pickGems(
   }
   const pickedLow = shuffle(lowCost)[0];
   const rest = fillable.filter((g) => g.id !== pickedLow.id);
-  const restPicked = shuffle(rest).slice(0, slots - 1);
+  const restPicked = pickN(rest, slots - 1, stratify);
   return shuffle([...must, pickedLow, ...restPicked]);
 }
 
@@ -118,6 +155,7 @@ function pickFixed<T extends Card>(
   must: T[],
   fillable: T[],
   type: 'Relic' | 'Spell',
+  stratify: boolean,
 ): T[] {
   const total = MARKET_COMPOSITION[type];
   const slots = total - must.length;
@@ -128,6 +166,6 @@ function pickFixed<T extends Card>(
       must.length + fillable.length,
     );
   }
-  const filled = slots > 0 ? shuffle(fillable).slice(0, slots) : [];
+  const filled = pickN(fillable, slots, stratify);
   return shuffle([...must, ...filled]);
 }
