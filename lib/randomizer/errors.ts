@@ -76,3 +76,10 @@ export class InsufficientMagePoolError extends Error {
     this.name = 'InsufficientMagePoolError';
   }
 }
+
+export class NoMatchingNemesisError extends Error {
+  constructor() {
+    super('条件に該当するネメシスがいません。フィルタを緩めてください');
+    this.name = 'NoMatchingNemesisError';
+  }
+}
