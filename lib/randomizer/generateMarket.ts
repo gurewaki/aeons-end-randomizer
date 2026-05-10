@@ -23,7 +23,8 @@ function dedupeByName<T extends Card>(cards: T[]): T[] {
 
 /**
  * pool から n 枚を抽選する。
- * stratify=true: cost 昇順に並べて n 等分し、各バケットから 1 枚ずつ抽選 (層化抽選)。
+ * stratify=true: コスト範囲 [min,max] を n 等分し、各コスト帯から 1 枚ずつ抽選。
+ *                空のコスト帯があれば残りプール全体からフォールバック抽選。
  * stratify=false: 単純シャッフル後の先頭 n 枚。
  */
 function pickN<T extends Card>(pool: T[], n: number, stratify: boolean): T[] {
@@ -32,12 +33,31 @@ function pickN<T extends Card>(pool: T[], n: number, stratify: boolean): T[] {
   if (!stratify) return shuffle(pool).slice(0, n);
 
   const sorted = [...pool].sort((a, b) => a.cost - b.cost);
+  const min = sorted[0].cost;
+  const max = sorted[sorted.length - 1].cost;
+  // 全部同コストなら範囲分割しても意味が無いのでフォールバック
+  if (min === max) return shuffle(pool).slice(0, n);
+
+  const range = max - min;
+  const used = new Set<string>();
   const out: T[] = [];
   for (let i = 0; i < n; i++) {
-    const start = Math.floor((i * sorted.length) / n);
-    const end = Math.floor(((i + 1) * sorted.length) / n);
-    const bucket = sorted.slice(start, end);
-    out.push(shuffle(bucket)[0]);
+    const lo = min + (i * range) / n;
+    const hi = min + ((i + 1) * range) / n;
+    const isLast = i === n - 1;
+    let bucket = sorted.filter(
+      (c) =>
+        !used.has(c.id) &&
+        c.cost >= lo &&
+        (isLast ? c.cost <= hi : c.cost < hi),
+    );
+    if (bucket.length === 0) {
+      // 該当コスト帯が空 → 残りプール全体から抽選
+      bucket = sorted.filter((c) => !used.has(c.id));
+    }
+    const picked = shuffle(bucket)[0];
+    used.add(picked.id);
+    out.push(picked);
   }
   return out;
 }

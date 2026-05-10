@@ -16,7 +16,7 @@ export function SupplyRandomizer() {
     () => new Set(EXPANSIONS.map((e) => e.id)),
   );
   const [requireLowCostGem, setRequireLowCostGem] = useState(true);
-  const [stratifyCost, setStratifyCost] = useState(false);
+  const [stratifyCost, setStratifyCost] = useState(true);
   const [mustUseCardIds, setMustUseCardIds] = useState<Set<string>>(
     () => new Set(),
   );

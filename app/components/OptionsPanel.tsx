@@ -40,10 +40,10 @@ export function OptionsPanel({
           />
           <span>
             <span className="block font-medium text-slate-100">
-              タイプ別にコストをばらけさせる
+              タイプ別にコストを分散する
             </span>
             <span className="block text-xs text-slate-400">
-              タイプごとに pool をコスト順に並べて枠数で等分し、各区画から 1 枚ずつ抽選 (低/中/高 のコストが偏らないようにする)
+              タイプごとにプールのコスト範囲 (最小〜最大) を枠数で等分し、各コスト帯から 1 枚ずつ抽選されます。低・中・高のコストが偏らない構成になります
             </span>
           </span>
         </label>

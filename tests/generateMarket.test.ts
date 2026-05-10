@@ -294,4 +294,103 @@ describe('generateMarket: stratifyCost', () => {
       expect(m.gems).toHaveLength(3);
     }
   });
+
+  // 範囲分割の確認: cost 2 が 2 枚 / 3 が 5 枚 / 4 が 6 枚 / 5 が 7 枚 / 6 が 2 枚
+  // → range 2-6, 3 等分で {2,3} / {4} / {5,6} に確実に振り分け
+  it('range-based: 偏ったプールでもコスト帯ごとに 1 枚ずつ', () => {
+    const skewedGems: Card[] = [];
+    let id = 0;
+    const add = (cost: number, count: number) => {
+      for (let i = 0; i < count; i++) {
+        skewedGems.push({
+          id: `fx:sg${++id}`,
+          expansionId: 'fx',
+          name: `宝石${id}`,
+          type: 'Gem',
+          cost,
+        });
+      }
+    };
+    add(2, 2);
+    add(3, 5);
+    add(4, 6);
+    add(5, 7);
+    add(6, 2);
+    const pool: Card[] = [
+      ...skewedGems,
+      relic('1', 1),
+      relic('2', 5),
+      spell('1', 1),
+      spell('2', 2),
+      spell('3', 5),
+      spell('4', 6),
+    ];
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(pool, {
+        requireLowCostGem: false,
+        stratifyCost: true,
+        mustUseCardIds: new Set(),
+      });
+      const sorted = m.gems.map((g) => g.cost).sort((a, b) => a - b);
+      // 1 枚目: cost 2 か 3
+      expect(sorted[0]).toBeGreaterThanOrEqual(2);
+      expect(sorted[0]).toBeLessThanOrEqual(3);
+      // 2 枚目: ちょうど cost 4 (range 4/3≈1.33 で中央バケットは 4 のみ)
+      expect(sorted[1]).toBe(4);
+      // 3 枚目: cost 5 か 6
+      expect(sorted[2]).toBeGreaterThanOrEqual(5);
+      expect(sorted[2]).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it('range-based: 空コスト帯はフォールバック (残りプールから抽選)', () => {
+    // cost 2 が 1 枚と cost 6 が 3 枚 → 中央のコスト帯 [3.33, 4.67) は空
+    const pool: Card[] = [
+      gem('lo1', 2),
+      gem('hi1', 6),
+      gem('hi2', 6),
+      gem('hi3', 6),
+      relic('1', 3),
+      relic('2', 4),
+      spell('1', 1),
+      spell('2', 2),
+      spell('3', 4),
+      spell('4', 5),
+    ];
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(pool, {
+        requireLowCostGem: false,
+        stratifyCost: true,
+        mustUseCardIds: new Set(),
+      });
+      const costs = m.gems.map((g) => g.cost).sort((a, b) => a - b);
+      // 端は確実に 2 と 6 が選ばれる (それぞれの帯に該当カードがある)
+      expect(costs[0]).toBe(2);
+      expect(costs[2]).toBe(6);
+      // 中央は空帯 → フォールバックで cost 6 が選ばれる (cost 2 は使用済み)
+      expect(costs[1]).toBe(6);
+    }
+  });
+
+  it('range-based: 全部同コストならエラーにならず普通に抽選', () => {
+    const pool: Card[] = [
+      gem('a', 3),
+      gem('b', 3),
+      gem('c', 3),
+      gem('d', 3),
+      relic('1', 3),
+      relic('2', 3),
+      spell('1', 3),
+      spell('2', 3),
+      spell('3', 3),
+      spell('4', 3),
+    ];
+    const m = generateMarket(pool, {
+      requireLowCostGem: false,
+      stratifyCost: true,
+      mustUseCardIds: new Set(),
+    });
+    expect(m.gems).toHaveLength(3);
+    expect(m.gems.every((g) => g.cost === 3)).toBe(true);
+  });
 });
