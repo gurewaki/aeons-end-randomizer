@@ -374,10 +374,8 @@ function loadSetups(): RawSetup[] {
       typeCounts[slotType]++;
       return { type: slotType, minCost, maxCost } satisfies RawSetupSlot;
     });
-    if (typeCounts.Gem !== 3 || typeCounts.Relic !== 2 || typeCounts.Spell !== 4) {
-      throw new Error(
-        `${SETUPS_FILE}: setup "${r.name}" のスロット構成が公式 (Gem 3/Relic 2/Spell 4) と異なります (Gem ${typeCounts.Gem}/Relic ${typeCounts.Relic}/Spell ${typeCounts.Spell})`,
-      );
+    if (slots.length === 0) {
+      throw new Error(`${SETUPS_FILE}: setup "${r.name}" のスロットが空です`);
     }
     return { name: r.name, slots };
   });

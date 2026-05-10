@@ -48,9 +48,15 @@ export function MarketDisplay({
   }
   return (
     <div className="space-y-6">
-      <Section title="宝石" cards={market.gems} mustUseIds={mustUseIds} />
-      <Section title="遺物" cards={market.relics} mustUseIds={mustUseIds} />
-      <Section title="呪文" cards={market.spells} mustUseIds={mustUseIds} />
+      {market.gems.length > 0 && (
+        <Section title="宝石" cards={market.gems} mustUseIds={mustUseIds} />
+      )}
+      {market.relics.length > 0 && (
+        <Section title="遺物" cards={market.relics} mustUseIds={mustUseIds} />
+      )}
+      {market.spells.length > 0 && (
+        <Section title="呪文" cards={market.spells} mustUseIds={mustUseIds} />
+      )}
     </div>
   );
 }

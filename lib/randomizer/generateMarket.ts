@@ -63,7 +63,7 @@ export function generateMarket(
   for (const c of mustUse) mustUseTypeCounts[c.type]++;
   for (const t of ['Gem', 'Relic', 'Spell'] as const) {
     if (mustUseTypeCounts[t] > setupTypeCounts[t]) {
-      throw new TooManyMustUseError(t, mustUseTypeCounts[t]);
+      throw new TooManyMustUseError(t, mustUseTypeCounts[t], setupTypeCounts[t]);
     }
   }
 
@@ -123,14 +123,14 @@ export function generateMarket(
   result.relics = shuffle(result.relics);
   result.spells = shuffle(result.spells);
 
-  // タイプ毎の枚数が公式構成と一致するかは setup 妥当性に依存するが、念のため確認
+  // 結果のタイプ別枚数が setup のスロット構成と一致するかをサニティチェック
   if (
-    result.gems.length !== MARKET_COMPOSITION.Gem ||
-    result.relics.length !== MARKET_COMPOSITION.Relic ||
-    result.spells.length !== MARKET_COMPOSITION.Spell
+    result.gems.length !== setupTypeCounts.Gem ||
+    result.relics.length !== setupTypeCounts.Relic ||
+    result.spells.length !== setupTypeCounts.Spell
   ) {
     throw new Error(
-      `setup "${setup.name}" のスロット構成が不正です (Gem ${result.gems.length}/Relic ${result.relics.length}/Spell ${result.spells.length})`,
+      `setup "${setup.name}" の生成結果がスロット構成と一致しません (Gem ${result.gems.length}/${setupTypeCounts.Gem}, Relic ${result.relics.length}/${setupTypeCounts.Relic}, Spell ${result.spells.length}/${setupTypeCounts.Spell})`,
     );
   }
 

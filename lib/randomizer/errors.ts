@@ -22,9 +22,10 @@ export class TooManyMustUseError extends Error {
   constructor(
     public readonly type: CardType,
     public readonly count: number,
+    public readonly slotCount: number,
   ) {
     super(
-      `「必ず使用」のカードが${TYPE_LABEL[type]}スロット数 (${MARKET_COMPOSITION[type]}) を超えています: ${count} 枚`,
+      `「必ず使用」のカードが${TYPE_LABEL[type]}スロット数 (${slotCount}) を超えています: ${count} 枚`,
     );
     this.name = 'TooManyMustUseError';
   }
