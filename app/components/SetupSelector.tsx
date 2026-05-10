@@ -1,4 +1,4 @@
-import type { SupplySetup } from '../../lib/types';
+import type { CardType, SetupSlot, SupplySetup } from '../../lib/types';
 
 interface Props {
   setups: readonly SupplySetup[];
@@ -6,34 +6,39 @@ interface Props {
   onChange: (name: string) => void;
 }
 
-function describeSlot(slot: SupplySetup['slots'][number]): string {
+const TYPE_CHIP: Record<CardType, string> = {
+  Gem: 'border-violet-500/60 bg-violet-500/20 text-violet-200',
+  Relic: 'border-blue-500/60 bg-blue-500/20 text-blue-200',
+  Spell: 'border-yellow-500/60 bg-yellow-500/20 text-yellow-200',
+};
+
+const TYPE_TITLE: Record<CardType, string> = {
+  Gem: '宝石',
+  Relic: '遺物',
+  Spell: '呪文',
+};
+
+function constraintLabel(slot: SetupSlot): string {
   if (slot.minCost !== undefined && slot.maxCost !== undefined) {
     if (slot.minCost === slot.maxCost) return `=${slot.minCost}`;
     return `${slot.minCost}〜${slot.maxCost}`;
   }
   if (slot.minCost !== undefined) return `≥${slot.minCost}`;
   if (slot.maxCost !== undefined) return `≤${slot.maxCost}`;
-  return '不問';
+  return 'ANY';
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  Gem: '宝石',
-  Relic: '遺物',
-  Spell: '呪文',
-};
-
 function SetupPreview({ setup }: { setup: SupplySetup }) {
-  // タイプ別にコスト制約を集約
-  const byType = { Gem: [] as string[], Relic: [] as string[], Spell: [] as string[] };
-  for (const slot of setup.slots) {
-    byType[slot.type as keyof typeof byType].push(describeSlot(slot));
-  }
   return (
-    <div className="mt-1 space-y-0.5 text-xs text-slate-400">
-      {(['Gem', 'Relic', 'Spell'] as const).map((t) => (
-        <div key={t}>
-          {TYPE_LABEL[t]}: {byType[t].join(' / ')}
-        </div>
+    <div className="mt-2 flex flex-wrap gap-1">
+      {setup.slots.map((slot, i) => (
+        <span
+          key={i}
+          title={TYPE_TITLE[slot.type]}
+          className={`rounded border px-1.5 py-0.5 text-xs font-medium ${TYPE_CHIP[slot.type]}`}
+        >
+          {constraintLabel(slot)}
+        </span>
       ))}
     </div>
   );
