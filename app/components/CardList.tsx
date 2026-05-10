@@ -91,16 +91,7 @@ export function CardList() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-50 sm:text-3xl">
-          カード一覧
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          拡張・タイプ・コスト・名前/効果文で絞り込んで閲覧します
-        </p>
-      </header>
-
+    <div className="space-y-4">
       <div className="space-y-4">
         <ExpansionSelector
           expansions={EXPANSIONS}
@@ -179,21 +170,21 @@ export function CardList() {
         </section>
       </div>
 
-      <p className="mt-6 text-sm text-slate-400">
+      <p className="mt-2 text-sm text-slate-400">
         {filtered.length} / {allCards.length} 枚を表示
       </p>
 
       {filtered.length > 0 ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c) => (
             <CardTile key={c.id} card={c} />
           ))}
         </div>
       ) : (
-        <div className="mt-3 rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
           該当するカードがありません
         </div>
       )}
-    </main>
+    </div>
   );
 }

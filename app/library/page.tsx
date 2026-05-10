@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { CardList } from '../components/CardList';
+import { Library } from '../components/Library';
 
 export const metadata: Metadata = {
-  title: 'カード一覧',
+  title: '図鑑',
 };
 
 export default function Page() {
-  return <CardList />;
+  return <Library />;
 }

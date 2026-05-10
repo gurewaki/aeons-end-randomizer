@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: '/', label: 'サプライ' },
-  { href: '/cards', label: 'カード一覧' },
   { href: '/nemesis', label: 'ネメシス' },
   { href: '/player', label: 'プレイヤー' },
+  { href: '/library', label: '図鑑' },
 ];
 
 function isActive(pathname: string, href: string): boolean {
