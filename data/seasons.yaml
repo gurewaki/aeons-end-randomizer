@@ -1,33 +1,43 @@
 # Source of truth: 統合スプレッドシートの season タブ
-# package 名 (= 拡張 YAML の name フィールド) からシーズン番号と type を定義する。
+# package 名 (= 拡張 YAML の name フィールド) からシーズン番号と type と theme を定義する。
 # type:
 #   main = シーズンの大箱 (ネメシス基本カードを十分に含む)
 #   sub  = シーズンの小箱
+# theme: パッケージのテーマカラー (hex)
 # プロモなど season を持たないパッケージは記載しない。
 - package: イーオンズ・エンド
   season: 1
   type: main
+  theme: '#D0C277'
 - package: イーオンズ・エンド：深層
   season: 1
   type: sub
+  theme: '#D0C277'
 - package: イーオンズ・エンド：名無きもの
   season: 1
   type: sub
+  theme: '#D0C277'
 - package: イーオンズ・エンド：終わりなき戦い
   season: 2
   type: main
+  theme: '#BEBEBE'
 - package: イーオンズ・エンド：虚空
   season: 2
   type: sub
+  theme: '#BEBEBE'
 - package: イーオンズ・エンド：外より来たりし闇
   season: 2
   type: sub
+  theme: '#BEBEBE'
 - package: イーオンズ・エンド：レガシー
   season: 3
   type: main
+  theme: '#7DCCF3'
 - package: イーオンズ・エンド：埋もれた秘密
   season: 3
   type: sub
+  theme: '#7DCCF3'
 - package: イーオンズ・エンド：新たな時代
   season: 4
   type: main
+  theme: '#B779F4'

@@ -15,6 +15,7 @@ import {
 import { ExpansionSelector } from './ExpansionSelector';
 import { GenerateButton } from './GenerateButton';
 import { ErrorBanner } from './ErrorBanner';
+import { PackageBadge } from './PackageBadge';
 
 type PageMode = NemesisMode | 'basic';
 
@@ -236,14 +237,10 @@ function NemesisDisplay({
     );
   }
   const expansion = getExpansion(result.expansionId);
-  const expansionLabel =
-    expansion?.badge ?? expansion?.name ?? result.expansionId;
   return (
     <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-        <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5">
-          {expansionLabel}
-        </span>
+        <PackageBadge expansionId={result.expansionId} />
         {expansion?.season !== undefined && (
           <span className="rounded border border-rose-500/40 bg-rose-500/20 px-2 py-0.5 text-rose-200">
             シーズン {expansion.season}

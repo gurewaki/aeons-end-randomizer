@@ -53,6 +53,8 @@ export interface Expansion {
   season?: number;
   /** シーズン内での役割。main = 大箱 (基本カードを十分に含む)、sub = 小箱 */
   type?: PackageType;
+  /** パッケージのテーマカラー (hex 例: '#D0C277') */
+  theme?: string;
   cards: Card[];
   mages: Mage[];
   nemeses: Nemesis[];

@@ -98,7 +98,7 @@ function loadYamlByName(): Map<string, { file: string; expansion: YamlExpansion 
   return out;
 }
 
-type SeasonInfo = { season: number; type: 'main' | 'sub' };
+type SeasonInfo = { season: number; type: 'main' | 'sub'; theme?: string };
 
 function loadSeasonsYaml(): Map<string, SeasonInfo> {
   const text = readFileSync(SEASONS_FILE, 'utf8');
@@ -106,8 +106,14 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
     package: string;
     season: number;
     type: 'main' | 'sub';
+    theme?: string;
   }[];
-  return new Map(raw.map((r) => [r.package, { season: r.season, type: r.type }]));
+  return new Map(
+    raw.map((r) => [
+      r.package,
+      { season: r.season, type: r.type, theme: r.theme },
+    ]),
+  );
 }
 
 function normalize(s: string): string {
@@ -126,15 +132,19 @@ const knownPackages = new Set(yamlByName.keys());
 // ============================================================
 {
   const seasonRows = parseCsv(readFileSync(join(sheetDir, 'season.csv'), 'utf8'));
-  const sheetMap = new Map<string, { season?: number; type?: string }>();
+  const sheetMap = new Map<
+    string,
+    { season?: number; type?: string; theme?: string }
+  >();
   for (const row of seasonRows) {
     const pkg = row.package;
     if (!pkg) continue;
     const s = row.season === '' ? undefined : Number(row.season);
-    sheetMap.set(pkg, { season: s, type: row.type });
+    const theme = row.theme && row.theme !== '' ? row.theme : undefined;
+    sheetMap.set(pkg, { season: s, type: row.type, theme });
   }
   // sheet にあって yaml に無い (season が定義されているのに yaml に無い) → diff
-  for (const [pkg, { season, type }] of sheetMap.entries()) {
+  for (const [pkg, { season, type, theme }] of sheetMap.entries()) {
     if (season === undefined) continue; // プロモなど未割当はスキップ
     const y = seasonsYaml.get(pkg);
     if (!y) {
@@ -151,6 +161,10 @@ const knownPackages = new Set(yamlByName.keys());
       diffs++;
     } else if (y.type !== type) {
       console.log(`[season] ${pkg}: type 差分 sheet=${type} yaml=${y.type}`);
+      diffs++;
+    }
+    if ((y.theme ?? null) !== (theme ?? null)) {
+      console.log(`[season] ${pkg}: theme 差分 sheet=${theme} yaml=${y.theme}`);
       diffs++;
     }
   }

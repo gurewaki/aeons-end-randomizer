@@ -1,5 +1,5 @@
 import type { Mage } from '../../lib/types';
-import { getExpansion } from '../../lib/data';
+import { PackageBadge } from './PackageBadge';
 
 export function MageTile({
   mage,
@@ -8,8 +8,6 @@ export function MageTile({
   mage: Mage;
   isMustUse?: boolean;
 }) {
-  const expansion = getExpansion(mage.expansionId);
-  const expansionLabel = expansion?.badge ?? expansion?.name ?? mage.expansionId;
   const ringClass = isMustUse ? 'ring-2 ring-emerald-400/70' : '';
 
   return (
@@ -17,9 +15,7 @@ export function MageTile({
       className={`rounded-md border border-slate-600 bg-slate-800/60 p-3 shadow-sm ${ringClass}`}
     >
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
-          {expansionLabel}
-        </span>
+        <PackageBadge expansionId={mage.expansionId} />
         {mage.level !== undefined && (
           <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
             難易度 {mage.level}
