@@ -35,7 +35,7 @@ function SetupPreview({ setup }: { setup: SupplySetup }) {
         <span
           key={i}
           title={TYPE_TITLE[slot.type]}
-          className={`rounded border px-1.5 py-0.5 text-xs font-medium ${TYPE_CHIP[slot.type]}`}
+          className={`inline-block min-w-[3rem] rounded border px-1.5 py-0.5 text-center text-xs font-medium ${TYPE_CHIP[slot.type]}`}
         >
           {constraintLabel(slot)}
         </span>
