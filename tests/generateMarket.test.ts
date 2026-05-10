@@ -372,6 +372,48 @@ describe('generateMarket: stratifyCost', () => {
     }
   });
 
+  it('range-based + requireLowCost: 全枠に対して層化が適用され、cost 4 が高位バケットに漏れない', () => {
+    // ユーザ報告のシナリオ: cost 2x1 / 3x2 / 4x2 / 5x2 / 6x1 (合計 8 枚)
+    // 期待バケット: [2, 3.33) [3.33, 4.67) [4.67, 6] = {2,3} / {4} / {5,6}
+    const skewedGems: Card[] = [
+      gem('s2-1', 2),
+      gem('s3-1', 3),
+      gem('s3-2', 3),
+      gem('s4-1', 4),
+      gem('s4-2', 4),
+      gem('s5-1', 5),
+      gem('s5-2', 5),
+      gem('s6-1', 6),
+    ];
+    const pool: Card[] = [
+      ...skewedGems,
+      relic('r1', 1),
+      relic('r2', 5),
+      spell('sp1', 1),
+      spell('sp2', 2),
+      spell('sp3', 5),
+      spell('sp4', 6),
+    ];
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(pool, {
+        requireLowCostGem: true,
+        stratifyCost: true,
+        mustUseCardIds: new Set(),
+      });
+      const sorted = m.gems.map((g) => g.cost).sort((a, b) => a - b);
+      // 1 枠目: cost 2 か 3 (低位バケット)
+      expect(sorted[0]).toBeGreaterThanOrEqual(2);
+      expect(sorted[0]).toBeLessThanOrEqual(3);
+      // 2 枠目: ちょうど cost 4 (中央バケット 1 種類のみ)
+      expect(sorted[1]).toBe(4);
+      // 3 枠目: cost 5 か 6 (高位バケット)
+      expect(sorted[2]).toBeGreaterThanOrEqual(5);
+      expect(sorted[2]).toBeLessThanOrEqual(6);
+      // requireLowCost も自動的に満たされている
+      expect(m.gems.some((g) => g.cost <= 3)).toBe(true);
+    }
+  });
+
   it('range-based: 全部同コストならエラーにならず普通に抽選', () => {
     const pool: Card[] = [
       gem('a', 3),

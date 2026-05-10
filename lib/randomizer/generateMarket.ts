@@ -123,41 +123,6 @@ function pickGems(
   const total = MARKET_COMPOSITION.Gem;
   const slots = total - must.length;
 
-  if (!requireLowCost) {
-    if (fillable.length < slots) {
-      throw new InsufficientPoolError(
-        'Gem',
-        total,
-        must.length + fillable.length,
-      );
-    }
-    const filled = pickN(fillable, slots, stratify);
-    return shuffle([...must, ...filled]);
-  }
-
-  // requireLowCost = true
-  const mustHasLowCost = must.some((g) => g.cost <= LOW_COST_GEM_THRESHOLD);
-  if (mustHasLowCost) {
-    if (fillable.length < slots) {
-      throw new InsufficientPoolError(
-        'Gem',
-        total,
-        must.length + fillable.length,
-      );
-    }
-    const filled = pickN(fillable, slots, stratify);
-    return shuffle([...must, ...filled]);
-  }
-
-  // 必ず使用に低コスト Gem がない → 残スロットで確保する必要
-  if (slots < 1) {
-    // 既に Gem スロットが必ず使用で埋まっている
-    throw new InsufficientPoolError('LowCostGem', 1, 0);
-  }
-  const lowCost = fillable.filter((g) => g.cost <= LOW_COST_GEM_THRESHOLD);
-  if (lowCost.length < 1) {
-    throw new InsufficientPoolError('LowCostGem', 1, 0);
-  }
   if (fillable.length < slots) {
     throw new InsufficientPoolError(
       'Gem',
@@ -165,9 +130,38 @@ function pickGems(
       must.length + fillable.length,
     );
   }
+
+  const mustHasLowCost = must.some((g) => g.cost <= LOW_COST_GEM_THRESHOLD);
+
+  // requireLowCost の前提検証 (must が条件を満たさない場合)
+  if (requireLowCost && !mustHasLowCost) {
+    if (slots < 1) {
+      throw new InsufficientPoolError('LowCostGem', 1, 0);
+    }
+    if (!fillable.some((g) => g.cost <= LOW_COST_GEM_THRESHOLD)) {
+      throw new InsufficientPoolError('LowCostGem', 1, 0);
+    }
+  }
+
+  // stratify ON: 全スロットに対して層化抽選を一度に適用する。
+  //   pool 最小コスト <= 3 なら、最低位バケットに必ず低コスト Gem が含まれるため、
+  //   requireLowCost は層化によって自動的に満たされる (上で検証済み)。
+  //   先に低コスト 1 枚を確保するロジックを噛ませると残スロットの層化が n-1 等分に
+  //   なり、cost 4 が高位バケットに混入する不具合となるため、ここでは分岐させない。
+  if (stratify) {
+    return shuffle([...must, ...pickN(fillable, slots, true)]);
+  }
+
+  // 非 stratify
+  if (!requireLowCost || mustHasLowCost) {
+    return shuffle([...must, ...pickN(fillable, slots, false)]);
+  }
+
+  // 非 stratify + requireLowCost + must に低コストなし → 先に低コスト 1 枚確保
+  const lowCost = fillable.filter((g) => g.cost <= LOW_COST_GEM_THRESHOLD);
   const pickedLow = shuffle(lowCost)[0];
   const rest = fillable.filter((g) => g.id !== pickedLow.id);
-  const restPicked = pickN(rest, slots - 1, stratify);
+  const restPicked = pickN(rest, slots - 1, false);
   return shuffle([...must, pickedLow, ...restPicked]);
 }
 
