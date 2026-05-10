@@ -154,26 +154,60 @@ function BattleChipFilter({
   );
 }
 
-function EligibleSeasonsPanel({
-  eligibleSeasons,
+function BasicSeasonChipFilter({
+  eligible,
+  selected,
+  onChange,
 }: {
-  eligibleSeasons: number[];
+  eligible: number[];
+  selected: ReadonlySet<number>;
+  onChange: (next: Set<number>) => void;
 }) {
+  const toggle = (n: number) => {
+    const next = new Set(selected);
+    if (next.has(n)) next.delete(n);
+    else next.add(n);
+    onChange(next);
+  };
+  const allSelected =
+    eligible.length > 0 && eligible.every((s) => selected.has(s));
   return (
     <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-      <h2 className="mb-2 text-lg font-semibold text-slate-100">
-        抽選対象のシーズン
-      </h2>
-      {eligibleSeasons.length > 0 ? (
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-100">
+          抽選対象のシーズン
+        </h2>
+        {eligible.length > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              onChange(allSelected ? new Set() : new Set(eligible))
+            }
+            className="text-sm text-slate-300 underline-offset-2 hover:text-slate-100 hover:underline"
+          >
+            {allSelected ? 'すべて外す' : 'すべて選択'}
+          </button>
+        )}
+      </div>
+      {eligible.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {eligibleSeasons.map((s) => (
-            <span
-              key={s}
-              className="rounded border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-sm font-medium text-emerald-200"
-            >
-              シーズン {s}
-            </span>
-          ))}
+          {eligible.map((s) => {
+            const active = selected.has(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggle(s)}
+                className={`rounded border px-3 py-1.5 text-sm transition ${
+                  active
+                    ? 'border-emerald-500/60 bg-emerald-500/30 text-emerald-100'
+                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
+                }`}
+              >
+                シーズン {s}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <p className="text-sm text-slate-400">
@@ -181,7 +215,7 @@ function EligibleSeasonsPanel({
         </p>
       )}
       <p className="mt-2 text-xs text-slate-400">
-        各シーズンの main パッケージを所有しているシーズンが対象になります
+        各シーズンの main パッケージを所有しているシーズンが選択肢になります
       </p>
     </section>
   );
@@ -303,6 +337,9 @@ export function NemesisRandomizer() {
   );
   const [selectedBattle, setSelectedBattle] = useState<number | null>(null);
 
+  const [selectedBasicSeasons, setSelectedBasicSeasons] = useState<Set<number>>(
+    () => new Set(eligibleSeasons),
+  );
   const [nemesisResult, setNemesisResult] = useState<Nemesis | null>(null);
   const [nemesisResultMode, setNemesisResultMode] = useState<NemesisMode>('normal');
   const [basicResult, setBasicResult] = useState<BasicDeckResult | null>(null);
@@ -330,7 +367,10 @@ export function NemesisRandomizer() {
   const handleGenerateBasic = () => {
     setError(null);
     try {
-      setBasicResult(generateBasicDeck(eligibleSeasons));
+      const seasons = eligibleSeasons.filter((s) =>
+        selectedBasicSeasons.has(s),
+      );
+      setBasicResult(generateBasicDeck(seasons));
     } catch (e) {
       setBasicResult(null);
       setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
@@ -338,7 +378,9 @@ export function NemesisRandomizer() {
   };
 
   const canGenerateNemesis = selectedExpansionIds.size > 0;
-  const canGenerateBasic = eligibleSeasons.length > 0;
+  const canGenerateBasic = eligibleSeasons.some((s) =>
+    selectedBasicSeasons.has(s),
+  );
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
@@ -379,7 +421,11 @@ export function NemesisRandomizer() {
           />
         )}
         {pageMode === 'basic' && (
-          <EligibleSeasonsPanel eligibleSeasons={eligibleSeasons} />
+          <BasicSeasonChipFilter
+            eligible={eligibleSeasons}
+            selected={selectedBasicSeasons}
+            onChange={setSelectedBasicSeasons}
+          />
         )}
 
         {pageMode === 'basic' ? (
