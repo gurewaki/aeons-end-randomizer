@@ -26,12 +26,57 @@ export interface Spell extends CardBase {
 }
 export type Card = Gem | Relic | Spell;
 
+export type BreachSymbol = 'o' | '↑' | '↓' | '←' | '→' | 'x';
+
+export interface MageBreaches {
+  /** 破孔タイル 1〜4 の状態 */
+  tiles: [BreachSymbol, BreachSymbol, BreachSymbol, BreachSymbol];
+}
+
+export interface MageUniqueBreach {
+  number: number;
+  effect?: string;
+}
+
+export interface MageUniqueCard {
+  name: string;
+  type: CardType;
+  effect: string;
+}
+
+export interface MageInitialPile {
+  unique: number;
+  crystal: number;
+  spark: number;
+}
+
+export interface MageSkill {
+  name: string;
+  timing?: string;
+  effect: string;
+  charge?: number;
+}
+
 export interface Mage {
   id: string;
   expansionId: string;
   name: string;
   job: string;
   level?: number;
+  /** 破孔タイル 1-4 (o/↑/↓/←/→/x) */
+  breaches?: MageBreaches;
+  /** 固有破孔 (持っている場合) */
+  uniqueBreach?: MageUniqueBreach;
+  /** 固有カード */
+  uniqueCard?: MageUniqueCard;
+  /** 初期手札の構成 */
+  hand?: MageInitialPile;
+  /** 初期デッキの構成 */
+  deck?: MageInitialPile;
+  /** 固有スキル */
+  skill?: MageSkill;
+  /** キャラクター固有ルール */
+  rule?: string;
 }
 
 export interface Nemesis {

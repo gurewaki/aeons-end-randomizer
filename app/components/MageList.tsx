@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { EXPANSIONS } from '../../lib/data';
 import type { Mage } from '../../lib/types';
 import { ExpansionSelector } from './ExpansionSelector';
-import { MageTile } from './MageTile';
+import { MageDetailTile } from './MageDetailTile';
 
 export function MageList() {
   const expansionsWithMages = useMemo(
@@ -124,9 +124,9 @@ export function MageList() {
       </p>
 
       {filtered.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 lg:grid-cols-2">
           {filtered.map((m) => (
-            <MageTile key={m.id} mage={m} />
+            <MageDetailTile key={m.id} mage={m} />
           ))}
         </div>
       ) : (

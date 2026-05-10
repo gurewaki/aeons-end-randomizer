@@ -166,27 +166,129 @@ mages:
   - id: NA-END-70
     name: アーデルハイム
     job: 破孔魔術師の鍛冶屋
+    breaches: [o, ←, →, ↓]
+    uniqueCard:
+      name: アメジスト片
+      type: 宝石
+      effect: "1エーテルを得る。仲間1人は、カード1枚を引いてから手札のカード1枚を捨ててもよい。"
+    hand: { unique: 1, crystal: 2, spark: 2 }
+    deck: { unique: 0, crystal: 5, spark: 0 }
+    skill:
+      name: エーテル防御陣
+      timing: ネメシスのカード公開フェイズに有効
+      charge: 5
+      effect: "ネメシスのアタックカードあるいはパワーカードが公開されたとき、解決する前にそのカードを捨てることができる。捨てられるカードの効果は発動しない（代わりのカードを公開することもない）。"
   - id: NA-END-71
     name: ブラマ
     job: 長老
+    breaches: [o, ↓, →, ←]
+    uniqueCard:
+      name: 隠された光
+      type: 呪文
+      effect: "キャスト：1ダメージを与える。1エーテルを得る。"
+    hand: { unique: 1, crystal: 4, spark: 0 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 間際の体力注入
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: "プレイヤー1人は体力4を得る。"
   - id: NA-END-72
     name: ジアン
     job: 孤児
+    breaches: [o, o, →, ↓]
+    uniqueCard:
+      name: ムーンストーン片
+      type: 宝石
+      effect: "1エーテルを得る。追加で1エーテルを得る。追加で得たエーテルは宝石カードの獲得にのみ使用できる。"
+    hand: { unique: 1, crystal: 2, spark: 2 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 黒の鏡
+      timing: 自分のメインフェイズ中に有効
+      charge: 4
+      effect: "プレイヤー1人のセット中の呪文1枚を、それを捨てることなくキャストする。その後、その呪文をもう一度キャストする（呪文はその後に捨てる）。"
   - id: NA-END-73
     name: カディア
     job: 探索者
+    breaches: [o, ←, ↓, ←]
+    uniqueCard:
+      name: エメラルド片
+      type: 宝石
+      effect: |-
+        1エーテルを得る。
+        または
+        プレイヤー1人は体力1を得る。
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 異世界ゲート
+      timing: 任意のプレイヤーのメインフェイズ中に有効
+      charge: 5
+      effect: "ターンプレイヤーは、地震の捨て山から3枚までの呪文カードを手札に戻すことができる。そのプレイヤーは、そのターン中に開放状態の破孔それぞれに対して、2枚までの呪文をセットできる。"
   - id: NA-END-74
     name: ラッシュ
     job: 斥候
+    breaches: [o, ←, →, ←]
+    uniqueCard:
+      name: クォーツ片
+      type: 宝石
+      effect: "1エーテルを得る。ターン順カードの山札の一番上を公開し、それを山札の上か底のどちらかに戻す。公開したカードがプレイヤー側のターン順カードだったなら、さらに1エーテルを得る。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 思考加速
+      timing: 任意のプレイヤーのメインフェイズ中に有効
+      charge: 5
+      effect: "ターン順カードの捨て山にある、プレイヤーを指すターン順カード1枚を、ターン順カードの山札に戻してシャッフルする。そのプレイヤーは1ダメージを受ける。このとき、プレイヤー1人に対応しないターン順カード（複数のプレイヤーの中からターンプレイヤーを選択できるカード）は選べない。"
   - id: NA-END-75
     name: ミスト
     job: ダガーキャプテン
+    breaches: [o, ←, ↓, ↓]
+    uniqueCard:
+      name: ガーネット片
+      type: 宝石
+      effect: |-
+        1エーテルを得る。
+        または
+        プレイヤー1人の、セットされている呪文1枚をキャストする。
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 神占
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: "仲間はカード4枚を引く。"
   - id: NA-END-76
     name: フェドラクサ
     job: 予言者
+    breaches: [x, o, ↓, ←]
+    uniqueCard:
+      name: トルマリン片
+      type: 宝石
+      effect: "1エーテルを得る。仲間1人は1ダメージを受けてもよい。そうしたなら、その仲間は自分の手札にあるカード1枚を破壊する。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: 予兆のルーン
+      timing: ターン順決定カードが引かれた直後に有効
+      charge: 5
+      effect: "そのターン中、グレイヴホールドおよびプレイヤーに与えられる全ダメージを無効にする。"
   - id: NA-END-77
     name: ザクソス
     job: 熟練者
+    breaches: [o, →, →, ↓]
+    uniqueCard:
+      name: 火炎
+      type: 呪文
+      effect: "キャスト：ターン順カードの山札の一番上を公開し、また山札の上に戻す。公開したカードがプレイヤー側のターン順カードだったなら3ダメージを与える。そうでないなら1ダメージを与える。"
+    hand: { unique: 1, crystal: 4, spark: 0 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: 思惟リンク
+      timing: 任意のプレイヤーのメインフェイズ中に有効
+      charge: 5
+      effect: "仲間は合計で4チャージを得る。ターン順決定ｶｰﾄﾞの山札にある全カードを確認し、それらを任意の順で山札に戻す。"
 
 nemeses:
   - id: NA-END-110

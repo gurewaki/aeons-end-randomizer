@@ -154,34 +154,167 @@ mages:
     name: クラウディア
     job: 試掘者
     level: 5
+    breaches: [x, →, ↓, ↑]
+    uniqueCard:
+      name: エーテルスコープ
+      type: 宝石
+      effect: |-
+        1エーテルを得る。
+        または
+        仲間1人はチャージ1を失ってもよい。そうしたなら、自分はチャージ2を得る。
+    hand: { unique: 1, crystal: 4, spark: 0 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: エプロージョン
+      timing: 仲間のメインフェイズ中に有効
+      charge: 5
+      effect: |-
+        ターン実行中の仲間は2エーテルを得る。このターン中、その仲間が任意のサプライから最初のカードを獲得したとき、自分も同じサプライの山から1枚を獲得。
+        または
+        ターン実行中の仲間は5エーテルを得る。
   - id: NA-END-103
     name: ガイガー
     job: 潮流を支配する者
     level: 3
+    breaches: [o, o, ↓, ↓]
+    uniqueBreach:
+      number: 1
+      effect: "ダメージ+波動トークン数"
+    uniqueCard:
+      name: 波濤
+      type: 呪文
+      effect: "キャスト：チャージ1を得る。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 1, crystal: 3, spark: 1 }
+    skill:
+      name: 高潮
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: |-
+        波動トークン1個を自分の古代破孔に配置する。
+        または
+        自分の古代破孔にセットされている呪文1枚をキャストする。チャージ2を得る。
+    rule: "ガイガーの破孔Iは古代破孔である。この破孔には10個までの波動トークンを配置できる。古代破孔からキャストされる呪文は、その破孔に配置されている波動トークン1個につき1ダメージを追加で与える。"
   - id: NA-END-104
     name: ロスト
     job: 歩く火炉
     level: 5
+    breaches: [o, ←, →, →]
+    uniqueCard:
+      name: 心臓炉
+      type: 宝石
+      effect: |-
+        1エーテルを得る。
+        または
+        手札の <水晶> あるいは <スパーク> 1枚を破壊する。それと同種類のカードを錬成の山から1枚を獲得し、自分の手札に加える。
+    hand: { unique: 1, crystal: 2, spark: 2 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: か弱きものの力
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: "自分の捨て山にあるコストが0エーテルのカードを4枚まで自分の手札に戻す。"
+    rule: "すべての <水晶> と <錬成スパーク> を取り分け、「錬成の山」とする。錬成の山にあるカードはロストの <心臓炉> を使用することによってしか獲得できない。<水晶> と <錬成スパーク> は、それぞれ<水晶> と <スパーク> とみなす。"
   - id: NA-END-105
     name: リーア
     job: 遺物ハンター
     level: 6
+    breaches: [x, ←, ↓, ↓]
+    uniqueCard:
+      name: 二次元ポケット
+      type: 宝石
+      effect: "1エーテルを得る。追加で2エーテルを得る。追加で得たエーテルは遺物の獲得にのみ使用できる。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 5, spark: 0 }
+    skill:
+      name: 昇華
+      timing: 自分のメインフェイズ中に有効
+      charge: 4
+      effect: "自分の手札または自分の捨て山から、サプライから獲得したカード1枚を元のサプライの山に戻す。遺物を戻した場合、サプライにあるコストが「戻したカードのコスト+3エーテル」以下のカード1枚を獲得する。そうでないなら、サプライにあるコストが「戻したカードのコスト+2エーテル」以下のカード1枚を獲得する。どちらの場合も、獲得したカードは自分の手札に移す。"
   - id: NA-END-106
     name: サハラ
     job: 神託者
     level: 3
+    breaches: [o, ←, →, →]
+    uniqueBreach:
+      number: 4
+      effect: "ダメージ+2"
+    uniqueCard:
+      name: 輝く隕石
+      type: 宝石
+      effect: |-
+        1エーテルを得る。
+        または
+        3エーテルを得る。このエーテルは破孔の強化あるいは開放にのみ使用できる。
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 3, spark: 2 }
+    skill:
+      name: 星辰固縛
+      timing: 自分の呪文フェイズ中およびメインフェイズ中に有効
+      charge: 4
+      effect: "自分のデッキの上からカード3枚を公開する。その中に呪文があるなら、1枚を選んで自分の手札に移す。もし自分の星辰破孔にセット中の呪文がないなら、自分の手札から呪文2枚までを開放状態の星辰破孔にセットしてもよい。"
+    rule: "サハラの破孔IVは星辰破孔である。開放状態の星辰破孔からキャストされる呪文は追加で2ダメージを与える。"
   - id: NA-END-107
     name: ソスケル
     job: 貴族
     level: 4
+    breaches: [o, ↓, →, →]
+    uniqueCard:
+      name: ラッキーコイン
+      type: 宝石
+      effect: "1エーテルを得る。チャージ1を失ってもよい。そうしたなら、追加で2エーテルを得る。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: 活性化印章
+      timing: 自分のメインフェイズ中に有効
+      charge: 4
+      effect: |-
+        プレイヤー1人の活性化トークンが載っていない破孔に手元の活性化トークン1個を載せる。
+        または
+        プレイヤー1人の破孔から活性化トークン1個を自分の手元に戻す。そのプレイヤーは体力4を得る。
+    rule: "活性化トークンが載っている破孔にセットされた呪文をキャストしたプレイヤーはチャージ1を得る。"
   - id: NA-END-108
     name: タリクス
     job: 鎖の僕
     level: 6
+    breaches: [o, ←, ↓, ↓]
+    uniqueCard:
+      name: 熔熱晶
+      type: 遺物
+      effect: "1エーテルを得る。手札から呪文を3枚まで捨てる。こうして捨てた呪文1枚につき1エーテルを得る。これを自分のデッキの一番上に移してもよい。"
+    hand: { unique: 1, crystal: 0, spark: 4 }
+    deck: { unique: 1, crystal: 0, spark: 4 }
+    skill:
+      name: 舞い上がる灰
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: |-
+        自分の手札から <スパーク> 2枚を破壊する。そうしたなら、自分のプレイヤー番号が記され（含まれ）ているターン順カードをターン順カードの山に戻してシャッフルする。
+        または
+        グレイヴホールドは体力5を得る。
   - id: NA-END-109
     name: タクレン
     job: 盾
     level: 2
+    breaches: [o, ↓, →, ↓]
+    uniqueBreach:
+      number: 4
+      effect: "グレイヴホールド体力+1"
+    uniqueCard:
+      name: 魂のギフト
+      type: 呪文
+      effect: |-
+        キャスト：1ダメージを与える。
+        または
+        キャスト：仲間1人はカード1枚を引く。
+    hand: { unique: 1, crystal: 4, spark: 0 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: 破孔サイフォン
+      timing: 自分のメインフェイズ中に有効
+      charge: 4
+      effect: "プレイヤー1人の破孔1枚を強化する。プレイヤー1人はあなたの開放状態の破孔1枚につき体力1を得る。"
 
 nemeses:
   - id: NA-END-131

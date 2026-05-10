@@ -104,12 +104,28 @@ type RawCard = {
   keywords?: string[];
 };
 
+type BreachSymbol = 'o' | '↑' | '↓' | '←' | '→' | 'x';
+
 type RawMage = {
   id: string;
   name: string;
   job: string;
   level?: number;
+  breaches?: { tiles: [BreachSymbol, BreachSymbol, BreachSymbol, BreachSymbol] };
+  uniqueBreach?: { number: number; effect?: string };
+  uniqueCard?: { name: string; type: CardTypeEn; effect: string };
+  hand?: { unique: number; crystal: number; spark: number };
+  deck?: { unique: number; crystal: number; spark: number };
+  skill?: {
+    name: string;
+    timing?: string;
+    effect: string;
+    charge?: number;
+  };
+  rule?: string;
 };
+
+const VALID_BREACH = new Set(['o', '↑', '↓', '←', '→', 'x']);
 
 type RawNemesis = {
   id: string;
@@ -183,25 +199,123 @@ function parseMages(raw: unknown, file: string): RawMage[] {
   if (!Array.isArray(raw)) throw new Error(`${file}: mages は配列`);
   const seen = new Set<string>();
   return raw.map((m, idx) => {
-    if (!m || typeof m !== 'object') {
-      throw new Error(`${file}: mages[${idx}] はオブジェクト`);
-    }
+    const ctx = `${file}: mages[${idx}]`;
+    if (!m || typeof m !== 'object') throw new Error(`${ctx} はオブジェクト`);
     const r = m as Record<string, unknown>;
-    if (typeof r.id !== 'string') throw new Error(`${file}: mages[${idx}].id`);
-    if (typeof r.name !== 'string') throw new Error(`${file}: mages[${idx}].name`);
-    if (typeof r.job !== 'string') throw new Error(`${file}: mages[${idx}].job`);
+    if (typeof r.id !== 'string') throw new Error(`${ctx}.id`);
+    if (typeof r.name !== 'string') throw new Error(`${ctx}.name`);
+    if (typeof r.job !== 'string') throw new Error(`${ctx}.job`);
     if (seen.has(r.id)) throw new Error(`${file}: mage 内で id 重複: ${r.id}`);
     seen.add(r.id);
-    const level =
-      r.level === undefined || r.level === null
-        ? undefined
-        : typeof r.level === 'number'
-          ? r.level
-          : (() => {
-              throw new Error(`${file}: mages[${idx}].level は number か未指定`);
-            })();
-    return { id: r.id, name: r.name, job: r.job, level };
+
+    const level = optNumber(r.level, `${ctx}.level`);
+    const breaches = parseBreaches(r.breaches, `${ctx}.breaches`);
+    const uniqueBreach = parseUniqueBreach(r.uniqueBreach, `${ctx}.uniqueBreach`);
+    const uniqueCard = parseUniqueCard(r.uniqueCard, `${ctx}.uniqueCard`);
+    const hand = parseInitialPile(r.hand, `${ctx}.hand`);
+    const deck = parseInitialPile(r.deck, `${ctx}.deck`);
+    const skill = parseSkill(r.skill, `${ctx}.skill`);
+    const rule = optString(r.rule, `${ctx}.rule`);
+
+    return {
+      id: r.id,
+      name: r.name,
+      job: r.job,
+      level,
+      breaches,
+      uniqueBreach,
+      uniqueCard,
+      hand,
+      deck,
+      skill,
+      rule,
+    };
   });
+}
+
+function optNumber(v: unknown, ctx: string): number | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v !== 'number' || !Number.isFinite(v)) {
+    throw new Error(`${ctx} は number か未指定`);
+  }
+  return v;
+}
+function optString(v: unknown, ctx: string): string | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v !== 'string') throw new Error(`${ctx} は string か未指定`);
+  return v;
+}
+function reqNumber(v: unknown, ctx: string): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) {
+    throw new Error(`${ctx} は number`);
+  }
+  return v;
+}
+function reqString(v: unknown, ctx: string): string {
+  if (typeof v !== 'string') throw new Error(`${ctx} は string`);
+  return v;
+}
+function normalizeBreach(v: unknown): BreachSymbol | null {
+  if (v === '×' || v === 'x' || v === 'X') return 'x';
+  if (v === 'o' || v === 'O' || v === '○' || v === '〇') return 'o';
+  if (v === '↑' || v === '↓' || v === '←' || v === '→') return v;
+  return null;
+}
+
+function parseBreaches(raw: unknown, ctx: string): RawMage['breaches'] {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw) || raw.length !== 4) {
+    throw new Error(`${ctx} は長さ 4 の配列`);
+  }
+  const tiles: BreachSymbol[] = [];
+  for (const v of raw) {
+    const n = normalizeBreach(v);
+    if (n === null) {
+      throw new Error(`${ctx} の各要素は o/↑/↓/←/→/x のいずれか (受領: ${JSON.stringify(v)})`);
+    }
+    tiles.push(n);
+  }
+  return { tiles: tiles as [BreachSymbol, BreachSymbol, BreachSymbol, BreachSymbol] };
+}
+function parseUniqueBreach(raw: unknown, ctx: string): RawMage['uniqueBreach'] {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object') throw new Error(`${ctx} はオブジェクト`);
+  const r = raw as Record<string, unknown>;
+  return {
+    number: reqNumber(r.number, `${ctx}.number`),
+    effect: optString(r.effect, `${ctx}.effect`),
+  };
+}
+function parseUniqueCard(raw: unknown, ctx: string): RawMage['uniqueCard'] {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object') throw new Error(`${ctx} はオブジェクト`);
+  const r = raw as Record<string, unknown>;
+  return {
+    name: reqString(r.name, `${ctx}.name`),
+    type: normalizeType(r.type, `${ctx}.type`),
+    effect: reqString(r.effect, `${ctx}.effect`),
+  };
+}
+function parseInitialPile(raw: unknown, ctx: string): RawMage['hand'] {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object') throw new Error(`${ctx} はオブジェクト`);
+  const r = raw as Record<string, unknown>;
+  return {
+    unique: reqNumber(r.unique, `${ctx}.unique`),
+    crystal: reqNumber(r.crystal, `${ctx}.crystal`),
+    spark: reqNumber(r.spark, `${ctx}.spark`),
+  };
+}
+function parseSkill(raw: unknown, ctx: string): RawMage['skill'] {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object') throw new Error(`${ctx} はオブジェクト`);
+  const r = raw as Record<string, unknown>;
+  return {
+    name: reqString(r.name, `${ctx}.name`),
+    timing: optString(r.timing, `${ctx}.timing`),
+    effect: reqString(r.effect, `${ctx}.effect`),
+    charge: optNumber(r.charge, `${ctx}.charge`),
+  };
 }
 
 function parseNemeses(raw: unknown, file: string): RawNemesis[] {
@@ -285,6 +399,13 @@ function main() {
       name: m.name,
       job: m.job,
       level: m.level,
+      breaches: m.breaches,
+      uniqueBreach: m.uniqueBreach,
+      uniqueCard: m.uniqueCard,
+      hand: m.hand,
+      deck: m.deck,
+      skill: m.skill,
+      rule: m.rule,
     })),
     nemeses: e.nemeses.map((n) => ({
       id: `${e.id}:${n.id}`,

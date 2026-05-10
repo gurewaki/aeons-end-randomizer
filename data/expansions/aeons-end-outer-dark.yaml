@@ -76,9 +76,39 @@ mages:
   - id: NA-END-92
     name: インディラ
     job: 破孔魔術師の弟子
+    breaches: [x, x, ↓, x]
+    uniqueCard:
+      name: ツインオパール
+      type: 宝石
+      effect: "1エーテルを得る。手札から呪文1枚をキャストしてもよい。"
+    hand: { unique: 1, crystal: 3, spark: 1 }
+    deck: { unique: 1, crystal: 3, spark: 1 }
+    skill:
+      name: 火焔術師の策謀
+      timing: 自分のメインフェイズ中に有効
+      charge: 4
+      effect: "自分の手札にある呪文を何枚でもキャストする。それらの呪文は追加で1ダメージを与える。自分の捨て山にあるカード1枚を破壊してもよい。"
   - id: NA-END-93
     name: レムナント
     job: エーテル体
+    breaches: [o, →, →, ↓]
+    uniqueBreach:
+      number: 2
+      effect: "1エーテルを得る"
+    uniqueCard:
+      name: 虚空片
+      type: 宝石
+      effect: "1エーテルを得る。追加で破孔の強化あるいは開放にのみ使用できる1エーテルを得る。"
+    hand: { unique: 1, crystal: 2, spark: 2 }
+    deck: { unique: 0, crystal: 4, spark: 1 }
+    skill:
+      name: 儚き仮面
+      timing: 自分のメインフェイズ中に有効
+      charge: 5
+      effect: |-
+        仲間1人は自分の捨て山にあるカード2枚を自分の手札に移す。
+        または
+        グレイヴホールドは体力5を得る。
 
 nemeses:
   - id: NA-END-117
