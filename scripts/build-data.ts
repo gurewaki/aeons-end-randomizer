@@ -8,11 +8,16 @@ const SEASONS_FILE = path.join(ROOT, 'data', 'seasons.yaml');
 const OUT_FILE = path.join(ROOT, 'lib', 'data', 'expansions.generated.ts');
 
 type SeasonInfo = {
-  season: number;
-  type: 'main' | 'sub';
+  season?: number;
+  type?: 'main' | 'sub';
   theme?: string;
 };
 
+/**
+ * seasons.yaml を読み込み、package 名 → SeasonInfo のマップに展開する。
+ * YAML はシーズン単位のグループ構造 (theme と packages を持つ) で、
+ * グループ単位の theme/season を配下の各 package に展開する。
+ */
 function loadSeasonsByPackage(): Map<string, SeasonInfo> {
   const text = readFileSync(SEASONS_FILE, 'utf8');
   const raw = yaml.load(text);
@@ -20,32 +25,48 @@ function loadSeasonsByPackage(): Map<string, SeasonInfo> {
     throw new Error(`${SEASONS_FILE}: トップレベルは配列`);
   }
   const map = new Map<string, SeasonInfo>();
-  raw.forEach((row, idx) => {
-    if (!row || typeof row !== 'object') {
-      throw new Error(`${SEASONS_FILE}: [${idx}] はオブジェクト`);
+  raw.forEach((group, gIdx) => {
+    if (!group || typeof group !== 'object') {
+      throw new Error(`${SEASONS_FILE}: [${gIdx}] はオブジェクト`);
     }
-    const r = row as Record<string, unknown>;
-    if (typeof r.package !== 'string') {
-      throw new Error(`${SEASONS_FILE}: [${idx}].package`);
+    const g = group as Record<string, unknown>;
+    const season =
+      g.season === undefined
+        ? undefined
+        : typeof g.season === 'number'
+          ? g.season
+          : (() => {
+              throw new Error(`${SEASONS_FILE}: [${gIdx}].season は number か未指定`);
+            })();
+    if (g.theme !== undefined && typeof g.theme !== 'string') {
+      throw new Error(`${SEASONS_FILE}: [${gIdx}].theme は string か未指定`);
     }
-    if (typeof r.season !== 'number') {
-      throw new Error(`${SEASONS_FILE}: [${idx}].season は number`);
+    const theme = g.theme as string | undefined;
+    if (!Array.isArray(g.packages)) {
+      throw new Error(`${SEASONS_FILE}: [${gIdx}].packages は配列`);
     }
-    if (r.type !== 'main' && r.type !== 'sub') {
-      throw new Error(
-        `${SEASONS_FILE}: [${idx}].type は 'main' か 'sub' (受領: ${JSON.stringify(r.type)})`,
-      );
-    }
-    if (r.theme !== undefined && typeof r.theme !== 'string') {
-      throw new Error(`${SEASONS_FILE}: [${idx}].theme は string か未指定`);
-    }
-    if (map.has(r.package)) {
-      throw new Error(`${SEASONS_FILE}: package "${r.package}" が重複`);
-    }
-    map.set(r.package, {
-      season: r.season,
-      type: r.type,
-      theme: r.theme,
+    g.packages.forEach((p, pIdx) => {
+      if (!p || typeof p !== 'object') {
+        throw new Error(`${SEASONS_FILE}: [${gIdx}].packages[${pIdx}] はオブジェクト`);
+      }
+      const pp = p as Record<string, unknown>;
+      if (typeof pp.name !== 'string') {
+        throw new Error(`${SEASONS_FILE}: [${gIdx}].packages[${pIdx}].name`);
+      }
+      let type: 'main' | 'sub' | undefined;
+      if (pp.type === undefined) {
+        type = undefined;
+      } else if (pp.type === 'main' || pp.type === 'sub') {
+        type = pp.type;
+      } else {
+        throw new Error(
+          `${SEASONS_FILE}: [${gIdx}].packages[${pIdx}].type は 'main' / 'sub' / 未指定`,
+        );
+      }
+      if (map.has(pp.name)) {
+        throw new Error(`${SEASONS_FILE}: package "${pp.name}" が重複`);
+      }
+      map.set(pp.name, { season, type, theme });
     });
   });
   return map;

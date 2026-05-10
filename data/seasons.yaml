@@ -1,43 +1,27 @@
 # Source of truth: 統合スプレッドシートの season タブ
-# package 名 (= 拡張 YAML の name フィールド) からシーズン番号と type と theme を定義する。
-# type:
-#   main = シーズンの大箱 (ネメシス基本カードを十分に含む)
-#   sub  = シーズンの小箱
-# theme: パッケージのテーマカラー (hex)
-# プロモなど season を持たないパッケージは記載しない。
-- package: イーオンズ・エンド
-  season: 1
-  type: main
+# シーズン (= グループ) 単位で theme を定義し、配下に package を列挙する。
+# プロモなどシーズン未割当のグループは season を省略する (theme と packages のみ)。
+- season: 1
   theme: '#D0C277'
-- package: イーオンズ・エンド：深層
-  season: 1
-  type: sub
-  theme: '#D0C277'
-- package: イーオンズ・エンド：名無きもの
-  season: 1
-  type: sub
-  theme: '#D0C277'
-- package: イーオンズ・エンド：終わりなき戦い
-  season: 2
-  type: main
+  packages:
+    - { name: イーオンズ・エンド, type: main }
+    - { name: イーオンズ・エンド：深層, type: sub }
+    - { name: イーオンズ・エンド：名無きもの, type: sub }
+- season: 2
   theme: '#BEBEBE'
-- package: イーオンズ・エンド：虚空
-  season: 2
-  type: sub
-  theme: '#BEBEBE'
-- package: イーオンズ・エンド：外より来たりし闇
-  season: 2
-  type: sub
-  theme: '#BEBEBE'
-- package: イーオンズ・エンド：レガシー
-  season: 3
-  type: main
+  packages:
+    - { name: イーオンズ・エンド：終わりなき戦い, type: main }
+    - { name: イーオンズ・エンド：虚空, type: sub }
+    - { name: イーオンズ・エンド：外より来たりし闇, type: sub }
+- season: 3
   theme: '#7DCCF3'
-- package: イーオンズ・エンド：埋もれた秘密
-  season: 3
-  type: sub
-  theme: '#7DCCF3'
-- package: イーオンズ・エンド：新たな時代
-  season: 4
-  type: main
+  packages:
+    - { name: イーオンズ・エンド：レガシー, type: main }
+    - { name: イーオンズ・エンド：埋もれた秘密, type: sub }
+- season: 4
   theme: '#B779F4'
+  packages:
+    - { name: イーオンズ・エンド：新たな時代, type: main }
+- theme: '#F47A3B'
+  packages:
+    - { name: プロモーション }
