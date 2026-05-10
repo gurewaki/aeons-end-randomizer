@@ -3,23 +3,23 @@
 # minCost / maxCost を省略すれば「下限なし / 上限なし」を意味する (両方省略でコスト不問)。
 - name: ランダム
   slots:
-    - { type: Gem }
-    - { type: Gem }
-    - { type: Gem }
-    - { type: Relic }
-    - { type: Relic }
-    - { type: Spell }
-    - { type: Spell }
-    - { type: Spell }
-    - { type: Spell }
+    - { type: 宝石 }
+    - { type: 宝石 }
+    - { type: 宝石 }
+    - { type: 遺物 }
+    - { type: 遺物 }
+    - { type: 呪文 }
+    - { type: 呪文 }
+    - { type: 呪文 }
+    - { type: 呪文 }
 - name: バランス
   slots:
-    - { type: Gem, maxCost: 3 }
-    - { type: Gem, minCost: 4, maxCost: 4 }
-    - { type: Gem, minCost: 5 }
-    - { type: Relic, maxCost: 3 }
-    - { type: Relic, minCost: 4 }
-    - { type: Spell, maxCost: 4 }
-    - { type: Spell, maxCost: 4 }
-    - { type: Spell, minCost: 5 }
-    - { type: Spell, minCost: 5 }
+    - { type: 宝石, maxCost: 3 }
+    - { type: 宝石, minCost: 4, maxCost: 4 }
+    - { type: 宝石, minCost: 5 }
+    - { type: 遺物, maxCost: 3 }
+    - { type: 遺物, minCost: 4 }
+    - { type: 呪文, maxCost: 4 }
+    - { type: 呪文, maxCost: 4 }
+    - { type: 呪文, minCost: 5 }
+    - { type: 呪文, minCost: 5 }

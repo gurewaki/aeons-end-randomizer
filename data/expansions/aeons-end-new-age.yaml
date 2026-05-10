@@ -5,12 +5,12 @@ cards:
   # ---- Gem ----
   - id: NA-END-035
     name: 共鳴パール
-    type: Gem
+    type: 宝石
     cost: 3
     effect: "2エーテルを得る。仲間1人は手札から <共鳴パール> 1枚を捨て、カード1枚を引いてもよい。そうしたなら、あなたは追加で1エーテルを得る。"
   - id: NA-END-036
     name: 異界グラナイト
-    type: Gem
+    type: 宝石
     cost: 3
     effect: |-
       2エーテルを得る。
@@ -18,22 +18,22 @@ cards:
       これを破壊する。3エーテルを得る。
   - id: NA-END-037
     name: 潜在サイオナイト
-    type: Gem
+    type: 宝石
     cost: 3
     effect: "2エーテルを得る。仲間の捨て山に <潜在サイオナイト> が存在するなら、追加で1エーテルを得る。"
   - id: NA-END-038
     name: 循環碧玉
-    type: Gem
+    type: 宝石
     cost: 4
     effect: "2エーテルを得る。自分の捨て山の一番上が呪文カードなら、このカードを自分のデッキの一番上に移してもよい。"
   - id: NA-END-039
     name: 活性化ルビジウム
-    type: Gem
+    type: 宝石
     cost: 5
     effect: "3エーテルを得る。仲間1人は手札1枚を捨ててもよい。そうしたなら、そのプレイヤーはチャージ1を得る。"
   - id: NA-END-040
     name: ブラストストーンの原石
-    type: Gem
+    type: 宝石
     cost: 6
     effect: |-
       3エーテルを得る。
@@ -43,12 +43,12 @@ cards:
   # ---- Relic ----
   - id: NA-END-041
     name: マーブル銀河
-    type: Relic
+    type: 遺物
     cost: 2
     effect: "仲間1人は手札から <マーブル銀河> 1枚を捨て、カード1枚を引いてもよい。チャージ1を得る、あるいは自分の閉鎖状態の破孔のうち、強化コストが最も低い1枚を強化する。仲間1人が <マーブル銀河> を捨てていたなら、両方を適用する。"
   - id: NA-END-042
     name: 通電球
-    type: Relic
+    type: 遺物
     cost: 3
     effect: |-
       仲間1人の破孔1枚を強化する。
@@ -56,7 +56,7 @@ cards:
       プレイヤー1人のセット中の呪文1枚をキャストする。その呪文を破壊してもよい。
   - id: NA-END-043
     name: 閉じ込めた炎
-    type: Relic
+    type: 遺物
     cost: 3
     effect: |-
       プレイヤー1人の捨て山の一番上のカードを破壊する。
@@ -64,28 +64,28 @@ cards:
       これを破壊する。体力2を得る。
   - id: NA-END-044
     name: 苦痛導路
-    type: Relic
+    type: 遺物
     cost: 3
     effect: |-
       プレイヤー1人の破孔1枚に接続する。
       これを接続した破孔から呪文がキャストされたら、その呪文は追加で2ダメージを与え、これを捨てる。
   - id: NA-END-045
     name: エーテル導路
-    type: Relic
+    type: 遺物
     cost: 4
     effect: |-
       プレイヤー1人の破孔1枚に接続する。
       これを接続した破孔から呪文がキャストされるたび、その呪文をキャストしたプレイヤーは1エーテルを得る。
   - id: NA-END-046
     name: 連接導路
-    type: Relic
+    type: 遺物
     cost: 6
     effect: |-
       プレイヤー1人の破孔1枚に接続する。
       これを接続した破孔は呪文を2枚までセットできる。
   - id: NA-END-047
     name: エネルギーの源泉
-    type: Relic
+    type: 遺物
     cost: 7
     effect: |-
       グレイヴホールドは体力2を得る。
@@ -95,55 +95,55 @@ cards:
   # ---- Spell ----
   - id: NA-END-048
     name: 操りダート
-    type: Spell
+    type: 呪文
     cost: 3
     effect: "キャスト：2ダメージを与える。これが開放状態のIIIかIVの破孔からキャストされたなら、任意の仲間の手札に移してもよい。"
   - id: NA-END-049
     name: 反響ショック
-    type: Spell
+    type: 呪文
     cost: 4
     effect: |-
       エコー
       キャスト：1ダメージを与える。1エーテルを得る。このエーテルはカードの獲得にのみ使用できる。
   - id: NA-END-050
     name: フォース増幅
-    type: Spell
+    type: 呪文
     cost: 4
     effect: "キャスト：3ダメージを与える。これが開放状態のIIIかIVの破孔からキャストされたなら、追加で1ダメージを与える。"
   - id: NA-END-051
     name: 破滅の調合
-    type: Spell
+    type: 呪文
     cost: 5
     effect: |-
       キャスト：4ダメージを与える。
       仲間1人は手札から <破滅の調合> 1枚を捨て、カード1枚を引いてもよい。そうしたなら、3ダメージを与える。
   - id: NA-END-052
     name: 反跳爆破
-    type: Spell
+    type: 呪文
     cost: 6
     effect: |-
       エコー
       キャスト：2ダメージを与える。
   - id: NA-END-053
     name: 氾濫するパワー
-    type: Spell
+    type: 呪文
     cost: 6
     effect: |-
       キャスト：4ダメージを与える。
       仲間1人は手札2枚までを捨ててもよい。そのプレイヤーは、こうして捨てた手札と同じ枚数のカードを引く。
   - id: NA-END-054
     name: 様式的攻撃
-    type: Spell
+    type: 呪文
     cost: 7
     effect: "キャスト：4ダメージを与える。自分の捨て山にあるコストが0エーテルのカードを2枚まで自分の手札に戻してもよい。"
   - id: NA-END-055
     name: 浸透破
-    type: Spell
+    type: 呪文
     cost: 5
     effect: "キャスト：4ダメージを与える。手札1枚を捨ててもよい。そうしたなら、ネメシスに2ダメージを与える。"
   - id: NA-END-056
     name: 精神高揚
-    type: Spell
+    type: 呪文
     cost: 8
     effect: |-
       セット中：自分のターンのメインフェイズ中に1回だけ、自分がチャージを得たら仲間1人はチャージ2を得る。

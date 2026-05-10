@@ -9,6 +9,20 @@ const SETUPS_FILE = 'data/setups.yaml';
 
 type CsvRow = Record<string, string>;
 
+// シート / YAML の type は英語/日本語どちらでも受け付け、英語に正規化して比較
+const TYPE_TO_EN: Record<string, string> = {
+  Gem: 'Gem',
+  Relic: 'Relic',
+  Spell: 'Spell',
+  宝石: 'Gem',
+  遺物: 'Relic',
+  呪文: 'Spell',
+};
+function normalizeType(raw: string | undefined): string {
+  if (!raw) return '';
+  return TYPE_TO_EN[raw] ?? raw;
+}
+
 type YamlCard = {
   id: string;
   name: string;
@@ -244,7 +258,7 @@ const knownPackages = new Set(yamlByName.keys());
         console.log(`[card][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
         diffs++;
       }
-      if (sheet.type !== y.type) {
+      if (normalizeType(sheet.type) !== normalizeType(y.type)) {
         console.log(`[card][${pkg}] ${sheet.id} type: sheet="${sheet.type}" yaml="${y.type}"`);
         diffs++;
       }
@@ -440,7 +454,7 @@ const knownPackages = new Set(yamlByName.keys());
     }
     sheetSlots.forEach((s, i) => {
       const y = ySlots[i];
-      if (s.type !== y.type) {
+      if (normalizeType(s.type) !== normalizeType(y.type)) {
         console.log(`[setup][${name}] slot ${i + 1} type: sheet=${s.type} yaml=${y.type}`);
         diffs++;
       }

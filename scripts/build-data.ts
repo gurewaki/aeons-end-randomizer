@@ -74,10 +74,31 @@ function loadSeasonsByPackage(): Map<string, SeasonInfo> {
   return map;
 }
 
+type CardTypeEn = 'Gem' | 'Relic' | 'Spell';
+
+// シート / YAML では日本語表記も受け付ける (内部は英語型に正規化)
+const TYPE_TO_EN: Record<string, CardTypeEn> = {
+  Gem: 'Gem',
+  Relic: 'Relic',
+  Spell: 'Spell',
+  宝石: 'Gem',
+  遺物: 'Relic',
+  呪文: 'Spell',
+};
+
+function normalizeType(raw: unknown, ctx: string): CardTypeEn {
+  if (typeof raw !== 'string' || !(raw in TYPE_TO_EN)) {
+    throw new Error(
+      `${ctx}: type は Gem/Relic/Spell または 宝石/遺物/呪文 のいずれか (受領: ${JSON.stringify(raw)})`,
+    );
+  }
+  return TYPE_TO_EN[raw];
+}
+
 type RawCard = {
   id: string;
   name: string;
-  type: 'Gem' | 'Relic' | 'Spell';
+  type: CardTypeEn;
   cost: number;
   effect?: string;
   keywords?: string[];
@@ -107,8 +128,6 @@ type RawExpansion = {
   nemeses: RawNemesis[];
 };
 
-const VALID_TYPES = new Set(['Gem', 'Relic', 'Spell']);
-
 function validateExpansion(raw: unknown, file: string): RawExpansion {
   if (!raw || typeof raw !== 'object') {
     throw new Error(`${file}: ルートはオブジェクトである必要があります`);
@@ -126,9 +145,7 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
     const card = c as Record<string, unknown>;
     if (typeof card.id !== 'string') throw new Error(`${file}: cards[${idx}].id (string)`);
     if (typeof card.name !== 'string') throw new Error(`${file}: cards[${idx}].name (string)`);
-    if (typeof card.type !== 'string' || !VALID_TYPES.has(card.type)) {
-      throw new Error(`${file}: cards[${idx}].type は Gem/Relic/Spell のいずれか`);
-    }
+    const cardType = normalizeType(card.type, `${file}: cards[${idx}].type`);
     if (typeof card.cost !== 'number' || !Number.isFinite(card.cost)) {
       throw new Error(`${file}: cards[${idx}].cost (number)`);
     }
@@ -139,7 +156,7 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
     return {
       id: card.id,
       name: card.name,
-      type: card.type as RawCard['type'],
+      type: cardType,
       cost: card.cost,
       effect: typeof card.effect === 'string' ? card.effect : undefined,
       keywords: Array.isArray(card.keywords)
@@ -305,7 +322,7 @@ function main() {
 }
 
 type RawSetupSlot = {
-  type: 'Gem' | 'Relic' | 'Spell';
+  type: CardTypeEn;
   minCost?: number;
   maxCost?: number;
 };
@@ -340,11 +357,10 @@ function loadSetups(): RawSetup[] {
         throw new Error(`${SETUPS_FILE}: ${r.name}.slots[${sidx}] はオブジェクト`);
       }
       const ssl = sl as Record<string, unknown>;
-      if (ssl.type !== 'Gem' && ssl.type !== 'Relic' && ssl.type !== 'Spell') {
-        throw new Error(
-          `${SETUPS_FILE}: ${r.name}.slots[${sidx}].type は Gem/Relic/Spell`,
-        );
-      }
+      const slotType = normalizeType(
+        ssl.type,
+        `${SETUPS_FILE}: ${r.name}.slots[${sidx}].type`,
+      );
       const minCost =
         ssl.minCost === undefined ? undefined : Number(ssl.minCost);
       const maxCost =
@@ -355,8 +371,8 @@ function loadSetups(): RawSetup[] {
       if (maxCost !== undefined && !Number.isFinite(maxCost)) {
         throw new Error(`${SETUPS_FILE}: ${r.name}.slots[${sidx}].maxCost`);
       }
-      typeCounts[ssl.type]++;
-      return { type: ssl.type, minCost, maxCost } satisfies RawSetupSlot;
+      typeCounts[slotType]++;
+      return { type: slotType, minCost, maxCost } satisfies RawSetupSlot;
     });
     if (typeCounts.Gem !== 3 || typeCounts.Relic !== 2 || typeCounts.Spell !== 4) {
       throw new Error(
