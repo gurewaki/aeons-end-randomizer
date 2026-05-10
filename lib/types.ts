@@ -60,13 +60,23 @@ export interface Expansion {
   nemeses: Nemesis[];
 }
 
-export interface RandomizerOptions {
-  requireLowCostGem: boolean;
-  stratifyCost: boolean;
-  mustUseCardIds: ReadonlySet<string>;
+export interface SetupSlot {
+  type: CardType;
+  /** 下限コスト (含む)。省略で下限なし */
+  minCost?: number;
+  /** 上限コスト (含む)。省略で上限なし */
+  maxCost?: number;
 }
 
-export const LOW_COST_GEM_THRESHOLD = 3;
+export interface SupplySetup {
+  name: string;
+  slots: SetupSlot[];
+}
+
+export interface RandomizerOptions {
+  setup: SupplySetup;
+  mustUseCardIds: ReadonlySet<string>;
+}
 
 export interface MarketSupply {
   gems: Gem[];

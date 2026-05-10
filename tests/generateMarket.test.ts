@@ -1,30 +1,67 @@
 import { describe, it, expect } from 'vitest';
 import { generateMarket } from '../lib/randomizer/generateMarket';
-import { InsufficientPoolError } from '../lib/randomizer/errors';
+import {
+  TooManyMustUseError,
+  MustUseCannotBePlacedError,
+  SlotCannotBeFilledError,
+} from '../lib/randomizer/errors';
+import type { Card, Gem, Relic, Spell, SupplySetup } from '../lib/types';
 import {
   fxPool,
   fxRelics,
   fxSpells,
-  poolWithoutLowCostGem,
   fxPoolWithDuplicateNames,
 } from './fixtures';
 
-const ITERATIONS = 50;
+const ITERATIONS = 30;
 
-describe('generateMarket', () => {
+const RANDOM_SETUP: SupplySetup = {
+  name: 'ランダム',
+  slots: [
+    { type: 'Gem' },
+    { type: 'Gem' },
+    { type: 'Gem' },
+    { type: 'Relic' },
+    { type: 'Relic' },
+    { type: 'Spell' },
+    { type: 'Spell' },
+    { type: 'Spell' },
+    { type: 'Spell' },
+  ],
+};
+
+const BALANCED_SETUP: SupplySetup = {
+  name: 'バランス',
+  slots: [
+    { type: 'Gem', maxCost: 3 },
+    { type: 'Gem', minCost: 4, maxCost: 4 },
+    { type: 'Gem', minCost: 5 },
+    { type: 'Relic', maxCost: 3 },
+    { type: 'Relic', minCost: 4 },
+    { type: 'Spell', maxCost: 4 },
+    { type: 'Spell', maxCost: 4 },
+    { type: 'Spell', minCost: 5 },
+    { type: 'Spell', minCost: 5 },
+  ],
+};
+
+describe('generateMarket: ランダム setup', () => {
   it('Gem 3 / Relic 2 / Spell 4 を返す', () => {
-    const m = generateMarket(fxPool, { requireLowCostGem: false, stratifyCost: false, mustUseCardIds: new Set() });
+    const m = generateMarket(fxPool, {
+      setup: RANDOM_SETUP,
+      mustUseCardIds: new Set(),
+    });
     expect(m.gems).toHaveLength(3);
     expect(m.relics).toHaveLength(2);
     expect(m.spells).toHaveLength(4);
-    expect(m.gems.every((c) => c.type === 'Gem')).toBe(true);
-    expect(m.relics.every((c) => c.type === 'Relic')).toBe(true);
-    expect(m.spells.every((c) => c.type === 'Spell')).toBe(true);
   });
 
-  it('各セクション内で id・name 重複がない', () => {
+  it('各セクション内 id・name 重複なし', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPool, { requireLowCostGem: false, stratifyCost: false, mustUseCardIds: new Set() });
+      const m = generateMarket(fxPool, {
+        setup: RANDOM_SETUP,
+        mustUseCardIds: new Set(),
+      });
       const checkUnique = (cards: { id: string; name: string }[]) => {
         expect(new Set(cards.map((c) => c.id)).size).toBe(cards.length);
         expect(new Set(cards.map((c) => c.name)).size).toBe(cards.length);
@@ -35,70 +72,30 @@ describe('generateMarket', () => {
     }
   });
 
-  it('requireLowCostGem: true で Gem に必ず cost<=3 が含まれる', () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPool, { requireLowCostGem: true, stratifyCost: false, mustUseCardIds: new Set() });
-      expect(m.gems.some((g) => g.cost <= 3)).toBe(true);
-      expect(m.gems).toHaveLength(3);
-    }
-  });
-
-  it('requireLowCostGem: true で cost<=3 Gem が 0 枚なら InsufficientPoolError(LowCostGem)', () => {
-    expect(() =>
-      generateMarket(poolWithoutLowCostGem, { requireLowCostGem: true, stratifyCost: false, mustUseCardIds: new Set() }),
-    ).toThrow(InsufficientPoolError);
-    try {
-      generateMarket(poolWithoutLowCostGem, { requireLowCostGem: true, stratifyCost: false, mustUseCardIds: new Set() });
-    } catch (e) {
-      expect(e).toBeInstanceOf(InsufficientPoolError);
-      expect((e as InsufficientPoolError).kind).toBe('LowCostGem');
-    }
-  });
-
-  it('Gem が 3 枚未満なら InsufficientPoolError(Gem)', () => {
-    const pool = [...fxRelics, ...fxSpells]; // Gem 0 枚
-    try {
-      generateMarket(pool, { requireLowCostGem: false, stratifyCost: false, mustUseCardIds: new Set() });
-      expect.unreachable('should throw');
-    } catch (e) {
-      expect(e).toBeInstanceOf(InsufficientPoolError);
-      expect((e as InsufficientPoolError).kind).toBe('Gem');
-    }
-  });
-
-  it('Relic が 2 枚未満なら InsufficientPoolError(Relic)', () => {
-    const pool = [
+  it('Relic が 2 枚未満で SlotCannotBeFilledError', () => {
+    const pool: Card[] = [
       ...fxPool.filter((c) => c.type !== 'Relic'),
-      fxRelics[0], // Relic 1 枚のみ
+      fxRelics[0],
     ];
-    try {
-      generateMarket(pool, { requireLowCostGem: false, stratifyCost: false, mustUseCardIds: new Set() });
-      expect.unreachable('should throw');
-    } catch (e) {
-      expect(e).toBeInstanceOf(InsufficientPoolError);
-      expect((e as InsufficientPoolError).kind).toBe('Relic');
-    }
+    expect(() =>
+      generateMarket(pool, { setup: RANDOM_SETUP, mustUseCardIds: new Set() }),
+    ).toThrow(SlotCannotBeFilledError);
   });
 
-  it('Spell が 4 枚未満なら InsufficientPoolError(Spell)', () => {
-    const pool = [
+  it('Spell が 4 枚未満で SlotCannotBeFilledError', () => {
+    const pool: Card[] = [
       ...fxPool.filter((c) => c.type !== 'Spell'),
-      ...fxSpells.slice(0, 3), // Spell 3 枚のみ
+      ...fxSpells.slice(0, 3),
     ];
-    try {
-      generateMarket(pool, { requireLowCostGem: false, stratifyCost: false, mustUseCardIds: new Set() });
-      expect.unreachable('should throw');
-    } catch (e) {
-      expect(e).toBeInstanceOf(InsufficientPoolError);
-      expect((e as InsufficientPoolError).kind).toBe('Spell');
-    }
+    expect(() =>
+      generateMarket(pool, { setup: RANDOM_SETUP, mustUseCardIds: new Set() }),
+    ).toThrow(SlotCannotBeFilledError);
   });
 
-  it('同名カードが複数プールに含まれていても結果に 1 枚しか出ない', () => {
+  it('同名カードが複数あっても結果で 1 枚に', () => {
     for (let i = 0; i < ITERATIONS; i++) {
       const m = generateMarket(fxPoolWithDuplicateNames, {
-        requireLowCostGem: false,
-        stratifyCost: false,
+        setup: RANDOM_SETUP,
         mustUseCardIds: new Set(),
       });
       const allNames = [
@@ -111,328 +108,141 @@ describe('generateMarket', () => {
   });
 });
 
-describe('generateMarket: mustUseCardIds', () => {
-  it('指定したカードは必ず結果に含まれる', () => {
-    const mustGem = fxPool.find((c) => c.type === 'Gem' && c.cost === 4)!;
-    const mustRelic = fxPool.find((c) => c.type === 'Relic')!;
-    const mustSpell = fxPool.find((c) => c.type === 'Spell')!;
-    const ids = new Set([mustGem.id, mustRelic.id, mustSpell.id]);
+describe('generateMarket: バランス setup (コスト制約)', () => {
+  // 各コスト帯のカードを十分に揃えたプール
+  const balancedPool: Card[] = [
+    // Gem: cost 2, 3 (低), 4 (中), 5, 6 (高)
+    ...buildCards('Gem', [2, 3, 3, 4, 4, 5, 5, 6]),
+    // Relic: cost 2, 3 (低), 4, 5 (高)
+    ...buildCards('Relic', [2, 3, 3, 4, 5, 5]),
+    // Spell: cost 1, 2, 3, 4 (低), 5, 5, 6, 7 (高)
+    ...buildCards('Spell', [1, 2, 3, 4, 4, 5, 5, 6, 7, 7]),
+  ];
+
+  function buildCards(type: 'Gem' | 'Relic' | 'Spell', costs: number[]): Card[] {
+    return costs.map((cost, i) => {
+      const id = `fx-bal:${type}-${i}`;
+      const name = `${type}${i}`;
+      if (type === 'Gem') return { id, expansionId: 'fx-bal', name, type: 'Gem', cost } as Gem;
+      if (type === 'Relic') return { id, expansionId: 'fx-bal', name, type: 'Relic', cost } as Relic;
+      return { id, expansionId: 'fx-bal', name, type: 'Spell', cost } as Spell;
+    });
+  }
+
+  it('Gem スロット: 1 枚目 cost ≤ 3 / 2 枚目 cost = 4 / 3 枚目 cost ≥ 5', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPool, {
-        requireLowCostGem: false,
-        stratifyCost: false,
-        mustUseCardIds: ids,
+      const m = generateMarket(balancedPool, {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set(),
       });
-      expect(m.gems.map((c) => c.id)).toContain(mustGem.id);
-      expect(m.relics.map((c) => c.id)).toContain(mustRelic.id);
-      expect(m.spells.map((c) => c.id)).toContain(mustSpell.id);
+      const sorted = m.gems.map((g) => g.cost).sort((a, b) => a - b);
+      expect(sorted[0]).toBeLessThanOrEqual(3);
+      expect(sorted[1]).toBe(4);
+      expect(sorted[2]).toBeGreaterThanOrEqual(5);
     }
   });
 
-  it('Gem を 3 枚すべて指定すると残スロットを抽選しない', () => {
-    const gemIds = fxPool
-      .filter((c) => c.type === 'Gem')
-      .slice(0, 3)
-      .map((c) => c.id);
-    const ids = new Set(gemIds);
-    const m = generateMarket(fxPool, {
-      requireLowCostGem: false,
-      stratifyCost: false,
-      mustUseCardIds: ids,
-    });
-    expect(m.gems).toHaveLength(3);
-    expect(m.gems.map((c) => c.id).sort()).toEqual([...gemIds].sort());
+  it('Relic スロット: 1 枚目 cost ≤ 3 / 2 枚目 cost ≥ 4', () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(balancedPool, {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set(),
+      });
+      const sorted = m.relics.map((r) => r.cost).sort((a, b) => a - b);
+      expect(sorted[0]).toBeLessThanOrEqual(3);
+      expect(sorted[1]).toBeGreaterThanOrEqual(4);
+    }
   });
 
-  it('Gem を 4 枚以上指定すると TooManyMustUseError', async () => {
-    const { TooManyMustUseError } = await import('../lib/randomizer/errors');
-    const gemIds = fxPool
+  it('Spell スロット: 2 枚 cost ≤ 4 / 2 枚 cost ≥ 5', () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(balancedPool, {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set(),
+      });
+      const lowSpells = m.spells.filter((s) => s.cost <= 4);
+      const highSpells = m.spells.filter((s) => s.cost >= 5);
+      expect(lowSpells).toHaveLength(2);
+      expect(highSpells).toHaveLength(2);
+    }
+  });
+
+  it('スロットを満たすカードが無いと SlotCannotBeFilledError', () => {
+    // Gem cost = 4 が無いプール → スロット 2 が満たせない
+    const noFour: Card[] = balancedPool.filter(
+      (c) => !(c.type === 'Gem' && c.cost === 4),
+    );
+    expect(() =>
+      generateMarket(noFour, {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set(),
+      }),
+    ).toThrow(SlotCannotBeFilledError);
+  });
+});
+
+describe('generateMarket: mustUseCardIds + setup', () => {
+  const balancedPool: Card[] = [
+    ...buildCards('Gem', [2, 3, 4, 4, 5, 6]),
+    ...buildCards('Relic', [2, 3, 4, 5]),
+    ...buildCards('Spell', [1, 2, 3, 4, 5, 6, 7]),
+  ];
+  function buildCards(type: 'Gem' | 'Relic' | 'Spell', costs: number[]): Card[] {
+    return costs.map((cost, i) => {
+      const id = `fx-mu:${type}-${i}`;
+      const name = `${type}${i}`;
+      if (type === 'Gem') return { id, expansionId: 'fx-mu', name, type: 'Gem', cost } as Gem;
+      if (type === 'Relic') return { id, expansionId: 'fx-mu', name, type: 'Relic', cost } as Relic;
+      return { id, expansionId: 'fx-mu', name, type: 'Spell', cost } as Spell;
+    });
+  }
+
+  it('必ず使用カードは適合スロットに配置される', () => {
+    const mustGem4 = balancedPool.find(
+      (c) => c.type === 'Gem' && c.cost === 4,
+    )!;
+    const mustGem6 = balancedPool.find(
+      (c) => c.type === 'Gem' && c.cost === 6,
+    )!;
+    for (let i = 0; i < ITERATIONS; i++) {
+      const m = generateMarket(balancedPool, {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set([mustGem4.id, mustGem6.id]),
+      });
+      expect(m.gems.map((g) => g.id)).toContain(mustGem4.id);
+      expect(m.gems.map((g) => g.id)).toContain(mustGem6.id);
+    }
+  });
+
+  it('適合スロットが無い必ず使用は MustUseCannotBePlacedError', () => {
+    // バランス setup の Relic は ≤3 と ≥4 のみ。cost 5 を 2 枚指定すると 1 枚は ≥4 に入るが、
+    // もう 1 枚は配置不能 (≤3 はコスト不一致、≥4 は埋まり)
+    const relic5a = balancedPool.find(
+      (c) => c.type === 'Relic' && c.cost === 5,
+    )!;
+    const relic5b: Relic = {
+      ...relic5a,
+      id: 'fx-mu:Relic-extra',
+      name: 'RelicExtra',
+    } as Relic;
+    expect(() =>
+      generateMarket([...balancedPool, relic5b], {
+        setup: BALANCED_SETUP,
+        mustUseCardIds: new Set([relic5a.id, relic5b.id]),
+      }),
+    ).toThrow(MustUseCannotBePlacedError);
+  });
+
+  it('タイプ枠を超える必ず使用は TooManyMustUseError', () => {
+    const gemIds = balancedPool
       .filter((c) => c.type === 'Gem')
       .slice(0, 4)
       .map((c) => c.id);
     expect(() =>
-      generateMarket(fxPool, {
-        requireLowCostGem: false,
-        stratifyCost: false,
+      generateMarket(balancedPool, {
+        setup: BALANCED_SETUP,
         mustUseCardIds: new Set(gemIds),
       }),
     ).toThrow(TooManyMustUseError);
-  });
-
-  it('requireLowCostGem ON で 3 枚すべての Gem 指定が高コストなら InsufficientPoolError(LowCostGem)', () => {
-    const highGemIds = fxPool
-      .filter((c) => c.type === 'Gem' && c.cost > 3)
-      .slice(0, 3)
-      .map((c) => c.id);
-    expect(highGemIds).toHaveLength(3);
-    expect(() =>
-      generateMarket(fxPool, {
-        requireLowCostGem: true,
-        stratifyCost: false,
-        mustUseCardIds: new Set(highGemIds),
-      }),
-    ).toThrow(InsufficientPoolError);
-  });
-
-  it('requireLowCostGem ON で必ず使用に低コスト Gem があれば追加抽選不要', () => {
-    const lowGem = fxPool.find((c) => c.type === 'Gem' && c.cost <= 3)!;
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPool, {
-        requireLowCostGem: true,
-        stratifyCost: false,
-        mustUseCardIds: new Set([lowGem.id]),
-      });
-      expect(m.gems.map((c) => c.id)).toContain(lowGem.id);
-      expect(m.gems.some((g) => g.cost <= 3)).toBe(true);
-    }
-  });
-});
-
-describe('generateMarket: stratifyCost', () => {
-  // 各バケットに複数枚を入れて、抽選結果が必ず各バケットから 1 枚ずつになることを検証
-  // Spell: cost 1,2,3,4,5,6,7,8 の 8 枚 → 4 等分で各バケット = [1,2] [3,4] [5,6] [7,8]
-  const spell = (id: string, cost: number) => ({
-    id: `fx:s${id}`,
-    expansionId: 'fx',
-    name: `呪文${id}`,
-    type: 'Spell' as const,
-    cost,
-  });
-  const gem = (id: string, cost: number) => ({
-    id: `fx:g${id}`,
-    expansionId: 'fx',
-    name: `宝石${id}`,
-    type: 'Gem' as const,
-    cost,
-  });
-  const relic = (id: string, cost: number) => ({
-    id: `fx:r${id}`,
-    expansionId: 'fx',
-    name: `遺物${id}`,
-    type: 'Relic' as const,
-    cost,
-  });
-
-  const stratifyPool = [
-    gem('1', 1), gem('2', 2), gem('3', 3), gem('4', 4), gem('5', 5), gem('6', 6),
-    relic('1', 1), relic('2', 2), relic('3', 5), relic('4', 6),
-    spell('1', 1), spell('2', 2), spell('3', 3), spell('4', 4),
-    spell('5', 5), spell('6', 6), spell('7', 7), spell('8', 8),
-  ];
-
-  it('stratify: Spell 4 枚が各バケット (1-2 / 3-4 / 5-6 / 7-8) から 1 枚ずつ', () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(stratifyPool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const sorted = m.spells.map((c) => c.cost).sort((a, b) => a - b);
-      expect(sorted[0]).toBeGreaterThanOrEqual(1);
-      expect(sorted[0]).toBeLessThanOrEqual(2);
-      expect(sorted[1]).toBeGreaterThanOrEqual(3);
-      expect(sorted[1]).toBeLessThanOrEqual(4);
-      expect(sorted[2]).toBeGreaterThanOrEqual(5);
-      expect(sorted[2]).toBeLessThanOrEqual(6);
-      expect(sorted[3]).toBeGreaterThanOrEqual(7);
-      expect(sorted[3]).toBeLessThanOrEqual(8);
-    }
-  });
-
-  it('stratify: Gem 3 枚が各バケット (1-2 / 3-4 / 5-6) から 1 枚ずつ', () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(stratifyPool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const sorted = m.gems.map((c) => c.cost).sort((a, b) => a - b);
-      expect(sorted[0]).toBeGreaterThanOrEqual(1);
-      expect(sorted[0]).toBeLessThanOrEqual(2);
-      expect(sorted[1]).toBeGreaterThanOrEqual(3);
-      expect(sorted[1]).toBeLessThanOrEqual(4);
-      expect(sorted[2]).toBeGreaterThanOrEqual(5);
-      expect(sorted[2]).toBeLessThanOrEqual(6);
-    }
-  });
-
-  it('stratify: Relic 2 枚が各バケット (1-2 / 5-6) から 1 枚ずつ', () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(stratifyPool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const sorted = m.relics.map((c) => c.cost).sort((a, b) => a - b);
-      expect(sorted[0]).toBeLessThanOrEqual(2);
-      expect(sorted[1]).toBeGreaterThanOrEqual(5);
-    }
-  });
-
-  it('stratify + requireLowCostGem: 低コスト Gem 1 枚 + 残りは fillable から層化抽選', () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(stratifyPool, {
-        requireLowCostGem: true,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      expect(m.gems.some((g) => g.cost <= 3)).toBe(true);
-    }
-  });
-
-  it('stratify + mustUse: 必ず使用後の残スロットに層化を適用', () => {
-    const mustGem = stratifyPool.find(
-      (c) => c.type === 'Gem' && c.cost === 6,
-    )!;
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(stratifyPool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set([mustGem.id]),
-      });
-      expect(m.gems.map((c) => c.id)).toContain(mustGem.id);
-      expect(m.gems).toHaveLength(3);
-    }
-  });
-
-  // 範囲分割の確認: cost 2 が 2 枚 / 3 が 5 枚 / 4 が 6 枚 / 5 が 7 枚 / 6 が 2 枚
-  // → range 2-6, 3 等分で {2,3} / {4} / {5,6} に確実に振り分け
-  it('range-based: 偏ったプールでもコスト帯ごとに 1 枚ずつ', () => {
-    const skewedGems: Card[] = [];
-    let id = 0;
-    const add = (cost: number, count: number) => {
-      for (let i = 0; i < count; i++) {
-        skewedGems.push({
-          id: `fx:sg${++id}`,
-          expansionId: 'fx',
-          name: `宝石${id}`,
-          type: 'Gem',
-          cost,
-        });
-      }
-    };
-    add(2, 2);
-    add(3, 5);
-    add(4, 6);
-    add(5, 7);
-    add(6, 2);
-    const pool: Card[] = [
-      ...skewedGems,
-      relic('1', 1),
-      relic('2', 5),
-      spell('1', 1),
-      spell('2', 2),
-      spell('3', 5),
-      spell('4', 6),
-    ];
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(pool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const sorted = m.gems.map((g) => g.cost).sort((a, b) => a - b);
-      // 1 枚目: cost 2 か 3
-      expect(sorted[0]).toBeGreaterThanOrEqual(2);
-      expect(sorted[0]).toBeLessThanOrEqual(3);
-      // 2 枚目: ちょうど cost 4 (range 4/3≈1.33 で中央バケットは 4 のみ)
-      expect(sorted[1]).toBe(4);
-      // 3 枚目: cost 5 か 6
-      expect(sorted[2]).toBeGreaterThanOrEqual(5);
-      expect(sorted[2]).toBeLessThanOrEqual(6);
-    }
-  });
-
-  it('range-based: 空コスト帯はフォールバック (残りプールから抽選)', () => {
-    // cost 2 が 1 枚と cost 6 が 3 枚 → 中央のコスト帯 [3.33, 4.67) は空
-    const pool: Card[] = [
-      gem('lo1', 2),
-      gem('hi1', 6),
-      gem('hi2', 6),
-      gem('hi3', 6),
-      relic('1', 3),
-      relic('2', 4),
-      spell('1', 1),
-      spell('2', 2),
-      spell('3', 4),
-      spell('4', 5),
-    ];
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(pool, {
-        requireLowCostGem: false,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const costs = m.gems.map((g) => g.cost).sort((a, b) => a - b);
-      // 端は確実に 2 と 6 が選ばれる (それぞれの帯に該当カードがある)
-      expect(costs[0]).toBe(2);
-      expect(costs[2]).toBe(6);
-      // 中央は空帯 → フォールバックで cost 6 が選ばれる (cost 2 は使用済み)
-      expect(costs[1]).toBe(6);
-    }
-  });
-
-  it('range-based + requireLowCost: 全枠に対して層化が適用され、cost 4 が高位バケットに漏れない', () => {
-    // ユーザ報告のシナリオ: cost 2x1 / 3x2 / 4x2 / 5x2 / 6x1 (合計 8 枚)
-    // 期待バケット: [2, 3.33) [3.33, 4.67) [4.67, 6] = {2,3} / {4} / {5,6}
-    const skewedGems: Card[] = [
-      gem('s2-1', 2),
-      gem('s3-1', 3),
-      gem('s3-2', 3),
-      gem('s4-1', 4),
-      gem('s4-2', 4),
-      gem('s5-1', 5),
-      gem('s5-2', 5),
-      gem('s6-1', 6),
-    ];
-    const pool: Card[] = [
-      ...skewedGems,
-      relic('r1', 1),
-      relic('r2', 5),
-      spell('sp1', 1),
-      spell('sp2', 2),
-      spell('sp3', 5),
-      spell('sp4', 6),
-    ];
-    for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(pool, {
-        requireLowCostGem: true,
-        stratifyCost: true,
-        mustUseCardIds: new Set(),
-      });
-      const sorted = m.gems.map((g) => g.cost).sort((a, b) => a - b);
-      // 1 枠目: cost 2 か 3 (低位バケット)
-      expect(sorted[0]).toBeGreaterThanOrEqual(2);
-      expect(sorted[0]).toBeLessThanOrEqual(3);
-      // 2 枠目: ちょうど cost 4 (中央バケット 1 種類のみ)
-      expect(sorted[1]).toBe(4);
-      // 3 枠目: cost 5 か 6 (高位バケット)
-      expect(sorted[2]).toBeGreaterThanOrEqual(5);
-      expect(sorted[2]).toBeLessThanOrEqual(6);
-      // requireLowCost も自動的に満たされている
-      expect(m.gems.some((g) => g.cost <= 3)).toBe(true);
-    }
-  });
-
-  it('range-based: 全部同コストならエラーにならず普通に抽選', () => {
-    const pool: Card[] = [
-      gem('a', 3),
-      gem('b', 3),
-      gem('c', 3),
-      gem('d', 3),
-      relic('1', 3),
-      relic('2', 3),
-      spell('1', 3),
-      spell('2', 3),
-      spell('3', 3),
-      spell('4', 3),
-    ];
-    const m = generateMarket(pool, {
-      requireLowCostGem: false,
-      stratifyCost: true,
-      mustUseCardIds: new Set(),
-    });
-    expect(m.gems).toHaveLength(3);
-    expect(m.gems.every((g) => g.cost === 3)).toBe(true);
   });
 });

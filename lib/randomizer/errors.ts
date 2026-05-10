@@ -1,14 +1,5 @@
-import type { CardType } from '../types';
-import { LOW_COST_GEM_THRESHOLD, MARKET_COMPOSITION } from '../types';
-
-export type InsufficientPoolKind = CardType | 'LowCostGem';
-
-const KIND_LABEL: Record<InsufficientPoolKind, string> = {
-  Gem: '宝石',
-  Relic: '遺物',
-  Spell: '呪文',
-  LowCostGem: `コスト ${LOW_COST_GEM_THRESHOLD} 以下の宝石`,
-};
+import type { CardType, SetupSlot } from '../types';
+import { MARKET_COMPOSITION } from '../types';
 
 const TYPE_LABEL: Record<CardType, string> = {
   Gem: '宝石',
@@ -16,17 +7,15 @@ const TYPE_LABEL: Record<CardType, string> = {
   Spell: '呪文',
 };
 
-export class InsufficientPoolError extends Error {
-  constructor(
-    public readonly kind: InsufficientPoolKind,
-    public readonly required: number,
-    public readonly available: number,
-  ) {
-    super(
-      `カードプールが不足しています: ${KIND_LABEL[kind]} 必要 ${required} / 利用可能 ${available}`,
-    );
-    this.name = 'InsufficientPoolError';
+function formatSlotConstraint(slot: SetupSlot): string {
+  const t = TYPE_LABEL[slot.type];
+  if (slot.minCost !== undefined && slot.maxCost !== undefined) {
+    if (slot.minCost === slot.maxCost) return `${t} (コスト ${slot.minCost})`;
+    return `${t} (コスト ${slot.minCost}〜${slot.maxCost})`;
   }
+  if (slot.minCost !== undefined) return `${t} (コスト ${slot.minCost} 以上)`;
+  if (slot.maxCost !== undefined) return `${t} (コスト ${slot.maxCost} 以下)`;
+  return `${t} (コスト不問)`;
 }
 
 export class TooManyMustUseError extends Error {
@@ -40,6 +29,29 @@ export class TooManyMustUseError extends Error {
     this.name = 'TooManyMustUseError';
   }
 }
+
+export class MustUseCannotBePlacedError extends Error {
+  constructor(public readonly cardName: string) {
+    super(
+      `「必ず使用」のカード「${cardName}」を選択中のセットアップのどのスロットにも配置できません`,
+    );
+    this.name = 'MustUseCannotBePlacedError';
+  }
+}
+
+export class SlotCannotBeFilledError extends Error {
+  constructor(
+    public readonly slot: SetupSlot,
+    public readonly slotIndex: number,
+  ) {
+    super(
+      `スロット ${slotIndex + 1} (${formatSlotConstraint(slot)}) を満たすカードがプールにありません`,
+    );
+    this.name = 'SlotCannotBeFilledError';
+  }
+}
+
+// 以下、サプライランダマイザ以外で使用しているエラー (互換のため維持)
 
 export const PLAYER_COUNT_MIN = 1;
 export const PLAYER_COUNT_MAX = 8;

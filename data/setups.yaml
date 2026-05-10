@@ -1,0 +1,25 @@
+# Source of truth: 統合スプレッドシートの setup タブ
+# サプライランダマイザの固定セットアップ。各スロットにタイプとコスト制約を持たせる。
+# minCost / maxCost を省略すれば「下限なし / 上限なし」を意味する (両方省略でコスト不問)。
+- name: ランダム
+  slots:
+    - { type: Gem }
+    - { type: Gem }
+    - { type: Gem }
+    - { type: Relic }
+    - { type: Relic }
+    - { type: Spell }
+    - { type: Spell }
+    - { type: Spell }
+    - { type: Spell }
+- name: バランス
+  slots:
+    - { type: Gem, maxCost: 3 }
+    - { type: Gem, minCost: 4, maxCost: 4 }
+    - { type: Gem, minCost: 5 }
+    - { type: Relic, maxCost: 3 }
+    - { type: Relic, minCost: 4 }
+    - { type: Spell, maxCost: 4 }
+    - { type: Spell, maxCost: 4 }
+    - { type: Spell, minCost: 5 }
+    - { type: Spell, minCost: 5 }

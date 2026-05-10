@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { EXPANSIONS } from '../../lib/data';
+import { EXPANSIONS, SETUPS } from '../../lib/data';
 import type { Card, MarketSupply } from '../../lib/types';
 import { generateMarket } from '../../lib/randomizer/generateMarket';
 import { ExpansionSelector } from './ExpansionSelector';
-import { OptionsPanel } from './OptionsPanel';
+import { SetupSelector } from './SetupSelector';
 import { MustUseCardSelector } from './MustUseCardSelector';
 import { GenerateButton } from './GenerateButton';
 import { MarketDisplay } from './MarketDisplay';
@@ -15,8 +15,9 @@ export function SupplyRandomizer() {
   const [selectedExpansionIds, setSelectedExpansionIds] = useState<Set<string>>(
     () => new Set(EXPANSIONS.map((e) => e.id)),
   );
-  const [requireLowCostGem, setRequireLowCostGem] = useState(true);
-  const [stratifyCost, setStratifyCost] = useState(true);
+  const [selectedSetupName, setSelectedSetupName] = useState<string>(
+    () => SETUPS[0]?.name ?? '',
+  );
   const [mustUseCardIds, setMustUseCardIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -34,6 +35,11 @@ export function SupplyRandomizer() {
 
   const handleGenerate = () => {
     setError(null);
+    const setup = SETUPS.find((s) => s.name === selectedSetupName);
+    if (!setup) {
+      setError(`セットアップ "${selectedSetupName}" が見つかりません`);
+      return;
+    }
     const selectedCards = EXPANSIONS.filter((e) =>
       selectedExpansionIds.has(e.id),
     ).flatMap((e) => e.cards);
@@ -45,11 +51,7 @@ export function SupplyRandomizer() {
     const pool = [...selectedCards, ...mustUseExtra];
 
     try {
-      const generated = generateMarket(pool, {
-        requireLowCostGem,
-        stratifyCost,
-        mustUseCardIds,
-      });
+      const generated = generateMarket(pool, { setup, mustUseCardIds });
       setMarket(generated);
       setMarketMustUseIds(new Set(mustUseCardIds));
     } catch (e) {
@@ -67,7 +69,7 @@ export function SupplyRandomizer() {
           サプライランダマイザ
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          公式構成 (宝石 3 / 遺物 2 / 呪文 4) でサプライをランダム生成します
+          セットアップごとのスロット制約に従ってサプライを生成します
         </p>
       </header>
 
@@ -83,11 +85,10 @@ export function SupplyRandomizer() {
           selected={mustUseCardIds}
           onChange={setMustUseCardIds}
         />
-        <OptionsPanel
-          requireLowCostGem={requireLowCostGem}
-          stratifyCost={stratifyCost}
-          onChangeRequireLowCostGem={setRequireLowCostGem}
-          onChangeStratifyCost={setStratifyCost}
+        <SetupSelector
+          setups={SETUPS}
+          selectedName={selectedSetupName}
+          onChange={setSelectedSetupName}
         />
         <GenerateButton disabled={!canGenerate} onClick={handleGenerate} />
         <ErrorBanner message={error} />

@@ -5,6 +5,7 @@ import yaml from 'js-yaml';
 
 const YAML_DIR = 'data/expansions';
 const SEASONS_FILE = 'data/seasons.yaml';
+const SETUPS_FILE = 'data/setups.yaml';
 
 type CsvRow = Record<string, string>;
 
@@ -382,6 +383,80 @@ const knownPackages = new Set(yamlByName.keys());
         diffs++;
       }
     }
+  }
+}
+
+// ============================================================
+// 5) setup tab vs data/setups.yaml
+// ============================================================
+{
+  const rows = parseCsv(readFileSync(join(sheetDir, 'setup.csv'), 'utf8'));
+  const sheetSetups = new Map<string, { type: string; minCost?: number; maxCost?: number }[]>();
+  for (const row of rows) {
+    if (!row.setup) continue;
+    const slot = {
+      type: row.type,
+      minCost:
+        row.min_cost === '' || row.min_cost === '-'
+          ? undefined
+          : Number(row.min_cost),
+      maxCost:
+        row.max_cost === '' || row.max_cost === '-'
+          ? undefined
+          : Number(row.max_cost),
+    };
+    const arr = sheetSetups.get(row.setup) ?? [];
+    arr.push(slot);
+    sheetSetups.set(row.setup, arr);
+  }
+
+  const yamlSetups = yaml.load(readFileSync(SETUPS_FILE, 'utf8')) as {
+    name: string;
+    slots: { type: string; minCost?: number; maxCost?: number }[];
+  }[];
+  const yamlMap = new Map(yamlSetups.map((s) => [s.name, s.slots]));
+
+  for (const name of sheetSetups.keys()) {
+    if (!yamlMap.has(name)) {
+      console.log(`[setup] YAML 欠落: setup="${name}"`);
+      diffs++;
+    }
+  }
+  for (const name of yamlMap.keys()) {
+    if (!sheetSetups.has(name)) {
+      console.log(`[setup] シート欠落: setup="${name}"`);
+      diffs++;
+    }
+  }
+  for (const [name, sheetSlots] of sheetSetups.entries()) {
+    const ySlots = yamlMap.get(name);
+    if (!ySlots) continue;
+    if (sheetSlots.length !== ySlots.length) {
+      console.log(
+        `[setup][${name}] スロット数差分: sheet=${sheetSlots.length} yaml=${ySlots.length}`,
+      );
+      diffs++;
+      continue;
+    }
+    sheetSlots.forEach((s, i) => {
+      const y = ySlots[i];
+      if (s.type !== y.type) {
+        console.log(`[setup][${name}] slot ${i + 1} type: sheet=${s.type} yaml=${y.type}`);
+        diffs++;
+      }
+      if ((s.minCost ?? null) !== (y.minCost ?? null)) {
+        console.log(
+          `[setup][${name}] slot ${i + 1} minCost: sheet=${s.minCost} yaml=${y.minCost}`,
+        );
+        diffs++;
+      }
+      if ((s.maxCost ?? null) !== (y.maxCost ?? null)) {
+        console.log(
+          `[setup][${name}] slot ${i + 1} maxCost: sheet=${s.maxCost} yaml=${y.maxCost}`,
+        );
+        diffs++;
+      }
+    });
   }
 }
 

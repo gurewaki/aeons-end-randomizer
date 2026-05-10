@@ -35,5 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# codegen output (generated from data/expansions/*.yaml)
+# codegen output (generated from data/*.yaml)
 /lib/data/expansions.generated.ts
+/lib/data/setups.generated.ts

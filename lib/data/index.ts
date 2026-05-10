@@ -1,7 +1,8 @@
 import type { Expansion } from '../types';
 import { EXPANSIONS } from './expansions.generated';
+import { SETUPS } from './setups.generated';
 
-export { EXPANSIONS };
+export { EXPANSIONS, SETUPS };
 
 const byId = new Map<string, Expansion>(EXPANSIONS.map((e) => [e.id, e]));
 
