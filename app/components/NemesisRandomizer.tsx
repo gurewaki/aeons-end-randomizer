@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { EXPANSIONS, getExpansion } from '../../lib/data';
+import { EXPANSIONS, getSeasonTheme } from '../../lib/data';
 import type { Nemesis } from '../../lib/types';
 import {
   generateNemesis,
@@ -236,16 +236,10 @@ function NemesisDisplay({
       </div>
     );
   }
-  const expansion = getExpansion(result.expansionId);
   return (
     <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
         <PackageBadge expansionId={result.expansionId} />
-        {expansion?.season !== undefined && (
-          <span className="rounded border border-rose-500/40 bg-rose-500/20 px-2 py-0.5 text-rose-200">
-            シーズン {expansion.season}
-          </span>
-        )}
         {result.level !== undefined && (
           <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5">
             難易度 {result.level}
@@ -283,19 +277,34 @@ function BasicDeckDisplay({ result }: { result: BasicDeckResult | null }) {
         ネメシス基本カード
       </h3>
       <ul className="space-y-2">
-        {NEMESIS_TIERS.map((tier) => (
-          <li
-            key={tier}
-            className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/40 px-4 py-3"
-          >
-            <span className="text-base font-semibold text-slate-200">
-              階層 {tier}
-            </span>
-            <span className="rounded border border-emerald-500/60 bg-emerald-500/20 px-3 py-1 text-base font-bold text-emerald-100">
-              シーズン {result.byTier[tier]}
-            </span>
-          </li>
-        ))}
+        {NEMESIS_TIERS.map((tier) => {
+          const season = result.byTier[tier];
+          const theme = getSeasonTheme(season);
+          return (
+            <li
+              key={tier}
+              className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/40 px-4 py-3"
+            >
+              <span className="text-base font-semibold text-slate-200">
+                階層 {tier}
+              </span>
+              <span
+                className="rounded border px-3 py-1 text-base font-bold"
+                style={
+                  theme
+                    ? {
+                        borderColor: `${theme}99`,
+                        backgroundColor: `${theme}33`,
+                        color: theme,
+                      }
+                    : undefined
+                }
+              >
+                シーズン {season}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </article>
   );
