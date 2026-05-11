@@ -1,6 +1,7 @@
 import type { BreachSymbol, Mage, CardType } from '../../lib/types';
 import { CARD_TYPE_LABEL } from '../../lib/types';
 import { PackageBadge } from './PackageBadge';
+import { EffectText } from './EffectText';
 
 const BREACH_STYLE: Record<BreachSymbol, { className: string; label: string }> = {
   o: { className: 'border-emerald-500/60 bg-emerald-500/20 text-emerald-200', label: '○' },
@@ -25,26 +26,49 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PileLine({
-  pile,
-}: {
-  pile: { unique: number; crystal: number; spark: number };
-}) {
-  return (
-    <span className="text-xs text-slate-300">
-      固有 {pile.unique} / 水晶 {pile.crystal} / スパーク {pile.spark}
-    </span>
-  );
+function pileLine(
+  pile: { unique: number; crystal: number; spark: number },
+  uniqueName?: string,
+): string {
+  const parts: string[] = [];
+  if (pile.unique > 0) {
+    const label = uniqueName ?? '固有';
+    parts.push(`${label}${pile.unique}`);
+  }
+  if (pile.crystal > 0) parts.push(`水晶${pile.crystal}`);
+  if (pile.spark > 0) parts.push(`スパーク${pile.spark}`);
+  return parts.join(' / ');
 }
 
-export function MageDetailTile({ mage }: { mage: Mage }) {
+export function MageDetailTile({
+  mage,
+  variant = 'full',
+  isMustUse = false,
+}: {
+  mage: Mage;
+  variant?: 'full' | 'compact';
+  isMustUse?: boolean;
+}) {
+  const showFull = variant === 'full';
+  const ringClass = isMustUse ? 'ring-2 ring-emerald-400/70' : '';
+
   return (
-    <article className="rounded-md border border-slate-600 bg-slate-800/60 p-4 shadow-sm">
+    <article
+      className={`rounded-md border border-slate-600 bg-slate-800/60 p-4 shadow-sm ${ringClass}`}
+    >
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <PackageBadge expansionId={mage.expansionId} />
         {mage.level !== undefined && (
           <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
             難易度 {mage.level}
+          </span>
+        )}
+        {isMustUse && (
+          <span
+            className="rounded border border-emerald-400/60 bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-200"
+            title="必ず使用に指定したメイジ"
+          >
+            ★ 指定
           </span>
         )}
       </div>
@@ -53,23 +77,21 @@ export function MageDetailTile({ mage }: { mage: Mage }) {
       </div>
       <div className="mt-0.5 text-xs text-slate-300">{mage.job}</div>
 
-      {mage.breaches && (
+      {showFull && mage.breaches && (
         <>
           <SectionLabel>破孔</SectionLabel>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {mage.breaches.tiles.map((b, i) => {
-                const s = BREACH_STYLE[b];
-                return (
-                  <span
-                    key={i}
-                    className={`flex h-7 w-7 items-center justify-center rounded border text-sm font-medium ${s.className}`}
-                  >
-                    {s.label}
-                  </span>
-                );
-              })}
-            </div>
+          <div className="flex gap-1">
+            {mage.breaches.tiles.map((b, i) => {
+              const s = BREACH_STYLE[b];
+              return (
+                <span
+                  key={i}
+                  className={`flex h-7 w-7 items-center justify-center rounded border text-sm font-medium ${s.className}`}
+                >
+                  {s.label}
+                </span>
+              );
+            })}
           </div>
           {mage.uniqueBreach && (
             <div className="mt-1.5 text-xs text-slate-300">
@@ -99,26 +121,31 @@ export function MageDetailTile({ mage }: { mage: Mage }) {
               [{CARD_TYPE_LABEL[mage.uniqueCard.type]}]
             </span>
           </div>
-          <p className="mt-0.5 whitespace-pre-line text-xs leading-relaxed text-slate-300">
-            {mage.uniqueCard.effect}
-          </p>
+          <EffectText
+            text={mage.uniqueCard.effect}
+            className="mt-0.5 text-xs leading-relaxed text-slate-300"
+          />
         </>
       )}
 
-      {(mage.hand || mage.deck) && (
+      {showFull && (mage.hand || mage.deck) && (
         <>
           <SectionLabel>初期構成</SectionLabel>
           <div className="space-y-0.5">
             {mage.hand && (
               <div>
                 <span className="text-xs text-slate-400">手札: </span>
-                <PileLine pile={mage.hand} />
+                <span className="text-xs text-slate-300">
+                  {pileLine(mage.hand, mage.uniqueCard?.name)}
+                </span>
               </div>
             )}
             {mage.deck && (
               <div>
                 <span className="text-xs text-slate-400">山札: </span>
-                <PileLine pile={mage.deck} />
+                <span className="text-xs text-slate-300">
+                  {pileLine(mage.deck, mage.uniqueCard?.name)}
+                </span>
               </div>
             )}
           </div>
@@ -143,13 +170,14 @@ export function MageDetailTile({ mage }: { mage: Mage }) {
               {mage.skill.timing}
             </div>
           )}
-          <p className="mt-0.5 whitespace-pre-line text-xs leading-relaxed text-slate-300">
-            {mage.skill.effect}
-          </p>
+          <EffectText
+            text={mage.skill.effect}
+            className="mt-0.5 text-xs leading-relaxed text-slate-300"
+          />
         </>
       )}
 
-      {mage.rule && (
+      {showFull && mage.rule && (
         <>
           <SectionLabel>ルール</SectionLabel>
           <p className="whitespace-pre-line text-xs leading-relaxed text-slate-300">

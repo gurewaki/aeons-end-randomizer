@@ -375,6 +375,14 @@ function main() {
 
   const seasonsByPackage = loadSeasonsByPackage();
 
+  // シーズン昇順 (undefined = プロモ等は末尾) でソートしてから出力
+  expansions.sort((a, b) => {
+    const sa = seasonsByPackage.get(a.name)?.season ?? Infinity;
+    const sb = seasonsByPackage.get(b.name)?.season ?? Infinity;
+    if (sa !== sb) return sa - sb;
+    return a.id.localeCompare(b.id);
+  });
+
   const data = expansions.map((e) => {
     const si = seasonsByPackage.get(e.name);
     return {

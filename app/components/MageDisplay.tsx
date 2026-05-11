@@ -1,6 +1,6 @@
 import type { Mage } from '../../lib/types';
 import { EXPANSIONS } from '../../lib/data';
-import { MageTile } from './MageTile';
+import { MageDetailTile } from './MageDetailTile';
 
 function sortByPackage(mages: readonly Mage[]): Mage[] {
   const ids = new Set(mages.map((m) => m.id));
@@ -33,9 +33,14 @@ export function MageDisplay({
       <h3 className="mb-2 text-sm font-semibold tracking-wide text-slate-300">
         メイジ ({sorted.length})
       </h3>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         {sorted.map((m) => (
-          <MageTile key={m.id} mage={m} isMustUse={mustUseIds.has(m.id)} />
+          <MageDetailTile
+            key={m.id}
+            mage={m}
+            variant="compact"
+            isMustUse={mustUseIds.has(m.id)}
+          />
         ))}
       </div>
     </section>
