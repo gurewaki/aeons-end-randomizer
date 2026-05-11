@@ -55,6 +55,12 @@ export function CardList() {
     return Array.from({ length: max - min + 1 }, (_, i) => min + i);
   }, [allCards]);
 
+  const expansionOrder = useMemo(() => {
+    const m = new Map<string, number>();
+    EXPANSIONS.forEach((e, i) => m.set(e.id, i));
+    return m;
+  }, []);
+
   const filtered = useMemo(() => {
     const q = search.trim();
     return allCards
@@ -72,9 +78,13 @@ export function CardList() {
           return TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
         }
         if (a.cost !== b.cost) return a.cost - b.cost;
-        return a.name.localeCompare(b.name, 'ja');
+        const ai = expansionOrder.get(a.expansionId) ?? Infinity;
+        const bi = expansionOrder.get(b.expansionId) ?? Infinity;
+        if (ai !== bi) return ai - bi;
+        // 同じ拡張内では YAML の元順 (card.id) を維持
+        return a.id.localeCompare(b.id);
       });
-  }, [allCards, expansionIds, selectedTypes, selectedCosts, search]);
+  }, [allCards, expansionIds, selectedTypes, selectedCosts, search, expansionOrder]);
 
   const toggleType = (t: CardType) => {
     const next = new Set(selectedTypes);
