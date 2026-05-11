@@ -96,7 +96,6 @@ function normalizeType(raw: unknown, ctx: string): CardTypeEn {
 }
 
 type RawCard = {
-  id: string;
   name: string;
   type: CardTypeEn;
   cost: number;
@@ -107,7 +106,6 @@ type RawCard = {
 type BreachSymbol = 'o' | '↑' | '↓' | '←' | '→' | 'x';
 
 type RawMage = {
-  id: string;
   name: string;
   job: string;
   level?: number;
@@ -128,7 +126,6 @@ type RawMage = {
 const VALID_BREACH = new Set(['o', '↑', '↓', '←', '→', 'x']);
 
 type RawNemesis = {
-  id: string;
   name: string;
   level?: number;
   battle: number;
@@ -153,24 +150,22 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
   if (typeof r.name !== 'string') throw new Error(`${file}: name (string) が必要`);
   if (!Array.isArray(r.cards)) throw new Error(`${file}: cards (array) が必要`);
 
-  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
   const cards: RawCard[] = r.cards.map((c, idx) => {
     if (!c || typeof c !== 'object') {
       throw new Error(`${file}: cards[${idx}] はオブジェクト`);
     }
     const card = c as Record<string, unknown>;
-    if (typeof card.id !== 'string') throw new Error(`${file}: cards[${idx}].id (string)`);
     if (typeof card.name !== 'string') throw new Error(`${file}: cards[${idx}].name (string)`);
     const cardType = normalizeType(card.type, `${file}: cards[${idx}].type`);
     if (typeof card.cost !== 'number' || !Number.isFinite(card.cost)) {
       throw new Error(`${file}: cards[${idx}].cost (number)`);
     }
-    if (seenIds.has(card.id)) {
-      throw new Error(`${file}: 拡張内で id が重複: ${card.id}`);
+    if (seenNames.has(card.name)) {
+      throw new Error(`${file}: 拡張内で card name が重複: ${card.name}`);
     }
-    seenIds.add(card.id);
+    seenNames.add(card.name);
     return {
-      id: card.id,
       name: card.name,
       type: cardType,
       cost: card.cost,
@@ -202,11 +197,10 @@ function parseMages(raw: unknown, file: string): RawMage[] {
     const ctx = `${file}: mages[${idx}]`;
     if (!m || typeof m !== 'object') throw new Error(`${ctx} はオブジェクト`);
     const r = m as Record<string, unknown>;
-    if (typeof r.id !== 'string') throw new Error(`${ctx}.id`);
     if (typeof r.name !== 'string') throw new Error(`${ctx}.name`);
     if (typeof r.job !== 'string') throw new Error(`${ctx}.job`);
-    if (seen.has(r.id)) throw new Error(`${file}: mage 内で id 重複: ${r.id}`);
-    seen.add(r.id);
+    if (seen.has(r.name)) throw new Error(`${file}: mage name 重複: ${r.name}`);
+    seen.add(r.name);
 
     const level = optNumber(r.level, `${ctx}.level`);
     const breaches = parseBreaches(r.breaches, `${ctx}.breaches`);
@@ -218,7 +212,6 @@ function parseMages(raw: unknown, file: string): RawMage[] {
     const rule = optString(r.rule, `${ctx}.rule`);
 
     return {
-      id: r.id,
       name: r.name,
       job: r.job,
       level,
@@ -327,14 +320,13 @@ function parseNemeses(raw: unknown, file: string): RawNemesis[] {
       throw new Error(`${file}: nemeses[${idx}] はオブジェクト`);
     }
     const r = m as Record<string, unknown>;
-    if (typeof r.id !== 'string') throw new Error(`${file}: nemeses[${idx}].id`);
     if (typeof r.name !== 'string') throw new Error(`${file}: nemeses[${idx}].name`);
     if (typeof r.battle !== 'number') {
       throw new Error(`${file}: nemeses[${idx}].battle は number`);
     }
     if (typeof r.rule !== 'string') throw new Error(`${file}: nemeses[${idx}].rule`);
-    if (seen.has(r.id)) throw new Error(`${file}: nemesis 内で id 重複: ${r.id}`);
-    seen.add(r.id);
+    if (seen.has(r.name)) throw new Error(`${file}: nemesis name 重複: ${r.name}`);
+    seen.add(r.name);
     const level =
       r.level === undefined || r.level === null
         ? undefined
@@ -344,7 +336,6 @@ function parseNemeses(raw: unknown, file: string): RawNemesis[] {
               throw new Error(`${file}: nemeses[${idx}].level は number か未指定`);
             })();
     return {
-      id: r.id,
       name: r.name,
       level,
       battle: r.battle,
@@ -393,7 +384,7 @@ function main() {
     type: si?.type,
     theme: si?.theme,
     cards: e.cards.map((c) => ({
-      id: `${e.id}:${c.id}`,
+      id: `${e.id}:card:${c.name}`,
       expansionId: e.id,
       name: c.name,
       type: c.type,
@@ -402,7 +393,7 @@ function main() {
       keywords: c.keywords,
     })),
     mages: e.mages.map((m) => ({
-      id: `${e.id}:${m.id}`,
+      id: `${e.id}:mage:${m.name}`,
       expansionId: e.id,
       name: m.name,
       job: m.job,
@@ -416,7 +407,7 @@ function main() {
       rule: m.rule,
     })),
     nemeses: e.nemeses.map((n) => ({
-      id: `${e.id}:${n.id}`,
+      id: `${e.id}:nemesis:${n.name}`,
       expansionId: e.id,
       name: n.name,
       level: n.level,

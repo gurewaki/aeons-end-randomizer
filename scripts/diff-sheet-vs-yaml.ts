@@ -24,20 +24,17 @@ function normalizeType(raw: string | undefined): string {
 }
 
 type YamlCard = {
-  id: string;
   name: string;
   type: string;
   cost: number;
   effect?: string;
 };
 type YamlMage = {
-  id: string;
   name: string;
   job: string;
   level?: number;
 };
 type YamlNemesis = {
-  id: string;
   name: string;
   level?: number;
   battle: number;
@@ -210,7 +207,7 @@ const knownPackages = new Set(yamlByName.keys());
   const cardsByPkg = new Map<string, CsvRow[]>();
   for (const row of cardRows) {
     if (!row.package) {
-      console.log(`[card] ${row.id}: package 空欄`);
+      console.log(`[card] (name=${row.name}): package 空欄`);
       diffs++;
       continue;
     }
@@ -235,41 +232,37 @@ const knownPackages = new Set(yamlByName.keys());
   for (const [pkg, sheetRows] of cardsByPkg.entries()) {
     const target = yamlByName.get(pkg);
     if (!target) continue;
-    const cardsById = new Map(target.expansion.cards.map((c) => [c.id, c]));
-    const sheetIds = new Set(sheetRows.map((r) => r.id));
+    const cardsByCardName = new Map(target.expansion.cards.map((c) => [c.name, c]));
+    const sheetNames = new Set(sheetRows.map((r) => r.name));
 
-    for (const id of sheetIds) {
-      if (!cardsById.has(id)) {
-        console.log(`[card][${pkg}] YAML 欠落: ${id}`);
+    for (const name of sheetNames) {
+      if (!cardsByCardName.has(name)) {
+        console.log(`[card][${pkg}] YAML 欠落: ${name}`);
         diffs++;
       }
     }
-    for (const id of cardsById.keys()) {
-      if (!sheetIds.has(id)) {
-        console.log(`[card][${pkg}] シート欠落: ${id}`);
+    for (const name of cardsByCardName.keys()) {
+      if (!sheetNames.has(name)) {
+        console.log(`[card][${pkg}] シート欠落: ${name}`);
         diffs++;
       }
     }
 
     for (const sheet of sheetRows) {
-      const y = cardsById.get(sheet.id);
+      const y = cardsByCardName.get(sheet.name);
       if (!y) continue;
-      if (sheet.name !== y.name) {
-        console.log(`[card][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
-        diffs++;
-      }
       if (normalizeType(sheet.type) !== normalizeType(y.type)) {
-        console.log(`[card][${pkg}] ${sheet.id} type: sheet="${sheet.type}" yaml="${y.type}"`);
+        console.log(`[card][${pkg}] ${sheet.name} type: sheet="${sheet.type}" yaml="${y.type}"`);
         diffs++;
       }
       if (Number(sheet.cost) !== y.cost) {
-        console.log(`[card][${pkg}] ${sheet.id} cost: sheet="${sheet.cost}" yaml="${y.cost}"`);
+        console.log(`[card][${pkg}] ${sheet.name} cost: sheet="${sheet.cost}" yaml="${y.cost}"`);
         diffs++;
       }
       const sE = normalize(sheet.effect ?? '');
       const yE = normalize(y.effect ?? '');
       if (sE !== yE) {
-        console.log(`[card][${pkg}] ${sheet.id} effect:`);
+        console.log(`[card][${pkg}] ${sheet.name} effect:`);
         console.log(`  sheet: ${JSON.stringify(sE)}`);
         console.log(`   yaml: ${JSON.stringify(yE)}`);
         diffs++;
@@ -304,42 +297,38 @@ const knownPackages = new Set(yamlByName.keys());
 
   for (const [pkg, sheetRows] of byPkg.entries()) {
     const target = yamlByName.get(pkg)!;
-    const nemesesById = new Map(
-      (target.expansion.nemeses ?? []).map((n) => [n.id, n]),
+    const nemesesByName = new Map(
+      (target.expansion.nemeses ?? []).map((n) => [n.name, n]),
     );
-    const sheetIds = new Set(sheetRows.map((r) => r.id));
-    for (const id of sheetIds) {
-      if (!nemesesById.has(id)) {
-        console.log(`[nemesis][${pkg}] YAML 欠落: ${id}`);
+    const sheetNames = new Set(sheetRows.map((r) => r.name));
+    for (const name of sheetNames) {
+      if (!nemesesByName.has(name)) {
+        console.log(`[nemesis][${pkg}] YAML 欠落: ${name}`);
         diffs++;
       }
     }
-    for (const id of nemesesById.keys()) {
-      if (!sheetIds.has(id)) {
-        console.log(`[nemesis][${pkg}] シート欠落: ${id}`);
+    for (const name of nemesesByName.keys()) {
+      if (!sheetNames.has(name)) {
+        console.log(`[nemesis][${pkg}] シート欠落: ${name}`);
         diffs++;
       }
     }
     for (const sheet of sheetRows) {
-      const y = nemesesById.get(sheet.id);
+      const y = nemesesByName.get(sheet.name);
       if (!y) continue;
-      if (sheet.name !== y.name) {
-        console.log(`[nemesis][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
-        diffs++;
-      }
       const sLevel = sheet.level === '' || sheet.level === '-' ? undefined : Number(sheet.level);
       if (sLevel !== y.level) {
-        console.log(`[nemesis][${pkg}] ${sheet.id} level: sheet="${sLevel}" yaml="${y.level}"`);
+        console.log(`[nemesis][${pkg}] ${sheet.name} level: sheet="${sLevel}" yaml="${y.level}"`);
         diffs++;
       }
       if (Number(sheet.battle) !== y.battle) {
-        console.log(`[nemesis][${pkg}] ${sheet.id} battle: sheet="${sheet.battle}" yaml="${y.battle}"`);
+        console.log(`[nemesis][${pkg}] ${sheet.name} battle: sheet="${sheet.battle}" yaml="${y.battle}"`);
         diffs++;
       }
       const sR = normalize(sheet.rule ?? '');
       const yR = normalize(y.rule ?? '');
       if (sR !== yR) {
-        console.log(`[nemesis][${pkg}] ${sheet.id} rule:`);
+        console.log(`[nemesis][${pkg}] ${sheet.name} rule:`);
         console.log(`  sheet: ${JSON.stringify(sR)}`);
         console.log(`   yaml: ${JSON.stringify(yR)}`);
         diffs++;
@@ -364,36 +353,32 @@ const knownPackages = new Set(yamlByName.keys());
 
   for (const [pkg, sheetRows] of byPkg.entries()) {
     const target = yamlByName.get(pkg)!;
-    const magesById = new Map(
-      (target.expansion.mages ?? []).map((m) => [m.id, m]),
+    const magesByName = new Map(
+      (target.expansion.mages ?? []).map((m) => [m.name, m]),
     );
-    const sheetIds = new Set(sheetRows.map((r) => r.id));
-    for (const id of sheetIds) {
-      if (!magesById.has(id)) {
-        console.log(`[player][${pkg}] YAML 欠落: ${id}`);
+    const sheetNames = new Set(sheetRows.map((r) => r.name));
+    for (const name of sheetNames) {
+      if (!magesByName.has(name)) {
+        console.log(`[player][${pkg}] YAML 欠落: ${name}`);
         diffs++;
       }
     }
-    for (const id of magesById.keys()) {
-      if (!sheetIds.has(id)) {
-        console.log(`[player][${pkg}] シート欠落: ${id}`);
+    for (const name of magesByName.keys()) {
+      if (!sheetNames.has(name)) {
+        console.log(`[player][${pkg}] シート欠落: ${name}`);
         diffs++;
       }
     }
     for (const sheet of sheetRows) {
-      const y = magesById.get(sheet.id);
+      const y = magesByName.get(sheet.name);
       if (!y) continue;
-      if (sheet.name !== y.name) {
-        console.log(`[player][${pkg}] ${sheet.id} name: sheet="${sheet.name}" yaml="${y.name}"`);
-        diffs++;
-      }
       if (sheet.job !== y.job) {
-        console.log(`[player][${pkg}] ${sheet.id} job: sheet="${sheet.job}" yaml="${y.job}"`);
+        console.log(`[player][${pkg}] ${sheet.name} job: sheet="${sheet.job}" yaml="${y.job}"`);
         diffs++;
       }
       const sLevel = sheet.level === '' || sheet.level === '-' ? undefined : Number(sheet.level);
       if (sLevel !== y.level) {
-        console.log(`[player][${pkg}] ${sheet.id} level: sheet="${sLevel}" yaml="${y.level}"`);
+        console.log(`[player][${pkg}] ${sheet.name} level: sheet="${sLevel}" yaml="${y.level}"`);
         diffs++;
       }
     }
