@@ -132,11 +132,22 @@ type RawMage = {
 
 const VALID_BREACH = new Set(['o', '↑', '↓', '←', '→', 'x']);
 
+type RawNemesisSpecificCard = {
+  placement: string;
+  tier?: number;
+  name: string;
+  type?: NemesisCardTypeEn;
+  life?: number | '*';
+  shield?: number;
+  effect: string;
+};
+
 type RawNemesis = {
   name: string;
   level?: number;
   battle: number;
   rule: string;
+  cards: RawNemesisSpecificCard[];
 };
 
 type NemesisCardTypeEn = 'Attack' | 'Minion' | 'Power';
@@ -414,13 +425,49 @@ function parseNemeses(raw: unknown, file: string): RawNemesis[] {
           : (() => {
               throw new Error(`${file}: nemeses[${idx}].level は number か未指定`);
             })();
+    const cards = parseNemesisSpecificCards(r.cards, `${file}: nemeses[${idx}=${r.name}].cards`);
     return {
       name: r.name,
       level,
       battle: r.battle,
       rule: r.rule,
+      cards,
     };
   });
+}
+
+function parseNemesisSpecificCards(raw: unknown, ctx: string): RawNemesisSpecificCard[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) throw new Error(`${ctx} は配列`);
+  const seen = new Set<string>();
+  return raw.map((c, idx) => {
+    const cardCtx = `${ctx}[${idx}]`;
+    if (!c || typeof c !== 'object') throw new Error(`${cardCtx} はオブジェクト`);
+    const r = c as Record<string, unknown>;
+    const placement = reqString(r.placement, `${cardCtx}.placement`);
+    const tier = optNumber(r.tier, `${cardCtx}.tier`);
+    const name = reqString(r.name, `${cardCtx}.name`);
+    const effect = reqString(r.effect, `${cardCtx}.effect`);
+    const type =
+      r.type === undefined || r.type === null
+        ? undefined
+        : normalizeNemesisType(r.type, `${cardCtx}.type`);
+    const life = parseLife(r.life, `${cardCtx}.life`);
+    const shield = optNumber(r.shield, `${cardCtx}.shield`);
+    if (type !== 'Minion' && (life !== undefined || shield !== undefined)) {
+      throw new Error(`${cardCtx}: life/shield は Minion のみ指定可`);
+    }
+    if (seen.has(name)) throw new Error(`${ctx}: name 重複: ${name}`);
+    seen.add(name);
+    return { placement, tier, name, type, life, shield, effect };
+  });
+}
+
+function parseLife(raw: unknown, ctx: string): number | '*' | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (raw === '*') return '*';
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  throw new Error(`${ctx} は number か '*' か未指定 (受領: ${JSON.stringify(raw)})`);
 }
 
 function main() {
@@ -485,14 +532,28 @@ function main() {
       skill: m.skill,
       rule: m.rule,
     })),
-    nemeses: e.nemeses.map((n) => ({
-      id: `${e.id}:nemesis:${n.name}`,
-      expansionId: e.id,
-      name: n.name,
-      level: n.level,
-      battle: n.battle,
-      rule: n.rule,
-    })),
+    nemeses: e.nemeses.map((n) => {
+      const nemesisId = `${e.id}:nemesis:${n.name}`;
+      return {
+        id: nemesisId,
+        expansionId: e.id,
+        name: n.name,
+        level: n.level,
+        battle: n.battle,
+        rule: n.rule,
+        cards: n.cards.map((c) => ({
+          id: `${nemesisId}:specificCard:${c.name}`,
+          nemesisId,
+          placement: c.placement,
+          tier: c.tier,
+          name: c.name,
+          type: c.type,
+          life: c.life,
+          shield: c.shield,
+          effect: c.effect,
+        })),
+      };
+    }),
     nemesisCards: e.nemesisCards.map((c) => ({
       id: `${e.id}:nemesisCard:${c.name}`,
       expansionId: e.id,

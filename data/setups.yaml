@@ -3,17 +3,7 @@
 # minCost / maxCost を省略すれば「下限なし / 上限なし」を意味する (両方省略でコスト不問)。
 # スロット数が 9 (Gem 3 / Relic 2 / Spell 4) の場合はサプライ全体、
 # それ以外 (1 スロットなど) は単独抽選用 (探索行用) として扱われる。
-- name: ランダム
-  slots:
-    - { type: 宝石 }
-    - { type: 宝石 }
-    - { type: 宝石 }
-    - { type: 遺物 }
-    - { type: 遺物 }
-    - { type: 呪文 }
-    - { type: 呪文 }
-    - { type: 呪文 }
-    - { type: 呪文 }
+# 並び順はシートの順番に合わせる (UI のタブ順 / デフォルト選択に影響)。
 - name: バランス
   slots:
     - { type: 宝石, maxCost: 3 }
@@ -25,6 +15,17 @@
     - { type: 呪文, maxCost: 4 }
     - { type: 呪文, minCost: 5 }
     - { type: 呪文, minCost: 5 }
+- name: ランダム
+  slots:
+    - { type: 宝石 }
+    - { type: 宝石 }
+    - { type: 宝石 }
+    - { type: 遺物 }
+    - { type: 遺物 }
+    - { type: 呪文 }
+    - { type: 呪文 }
+    - { type: 呪文 }
+    - { type: 呪文 }
 - name: 宝石1枚
   slots:
     - { type: 宝石 }

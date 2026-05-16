@@ -79,6 +79,23 @@ export interface Mage {
   rule?: string;
 }
 
+export interface NemesisSpecificCard {
+  id: string;
+  nemesisId: string;
+  /** 自由記述ラベル。図鑑では同じ placement のカードをグルーピングして表示する */
+  placement: string;
+  /** ネメシスデッキのカードは 1-3、ストライク等の階層を持たないカードは未指定 */
+  tier?: number;
+  name: string;
+  /** アタック/ミニオン/パワー でない (ストライク 等) カードは未指定 */
+  type?: NemesisCardType;
+  /** ミニオンの体力 (Minion のみ)。可変の場合は '*' */
+  life?: number | '*';
+  /** ミニオンのシールド (Minion のみ、保有する場合) */
+  shield?: number;
+  effect: string;
+}
+
 export interface Nemesis {
   id: string;
   expansionId: string;
@@ -86,6 +103,8 @@ export interface Nemesis {
   level?: number;
   battle: number;
   rule: string;
+  /** ネメシス固有カード (基本デッキの共有カードと別管理) */
+  cards: NemesisSpecificCard[];
 }
 
 export type NemesisCardType = 'Attack' | 'Minion' | 'Power';

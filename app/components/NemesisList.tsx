@@ -5,8 +5,12 @@ import { EXPANSIONS } from '../../lib/data';
 import type { Nemesis } from '../../lib/types';
 import { ExpansionSelector } from './ExpansionSelector';
 import { NemesisTile } from './NemesisTile';
+import { NemesisDetail } from './NemesisDetail';
+import { Modal } from './Modal';
 
 export function NemesisList() {
+  const [selected, setSelected] = useState<Nemesis | null>(null);
+
   const expansionsWithNemeses = useMemo(
     () => EXPANSIONS.filter((e) => e.nemeses.length > 0),
     [],
@@ -65,6 +69,19 @@ export function NemesisList() {
 
   return (
     <div className="space-y-4">
+      <Modal
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        labelledBy="nemesis-detail-title"
+      >
+        {selected && (
+          <NemesisDetail
+            nemesis={selected}
+            titleId="nemesis-detail-title"
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </Modal>
       <ExpansionSelector
         expansions={expansionsWithNemeses}
         selected={expansionIds}
@@ -161,7 +178,14 @@ export function NemesisList() {
       {filtered.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((n) => (
-            <NemesisTile key={n.id} nemesis={n} />
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => setSelected(n)}
+              className="rounded-md text-left transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+            >
+              <NemesisTile nemesis={n} />
+            </button>
           ))}
         </div>
       ) : (
