@@ -33,6 +33,13 @@ type YamlMage = {
   name: string;
   job: string;
   level?: number;
+  breaches?: string[];
+  uniqueBreach?: { number: number; effect: string };
+  uniqueCard?: { name: string; type: string; effect: string };
+  hand?: { unique: number; crystal: number; spark: number };
+  deck?: { unique: number; crystal: number; spark: number };
+  skill?: { name: string; timing: string; charge: number; effect: string };
+  rule?: string;
 };
 type YamlNemesis = {
   name: string;
@@ -379,6 +386,150 @@ const knownPackages = new Set(yamlByName.keys());
       const sLevel = sheet.level === '' || sheet.level === '-' ? undefined : Number(sheet.level);
       if (sLevel !== y.level) {
         console.log(`[player][${pkg}] ${sheet.name} level: sheet="${sLevel}" yaml="${y.level}"`);
+        diffs++;
+      }
+
+      // breaches: × → x に正規化
+      const sBreaches = [sheet.breach_1, sheet.breach_2, sheet.breach_3, sheet.breach_4]
+        .map((b) => (b === '×' ? 'x' : b ?? ''));
+      const yBreaches = y.breaches ?? [];
+      const breachesEqual =
+        sBreaches.length === yBreaches.length && sBreaches.every((b, i) => b === yBreaches[i]);
+      if (!breachesEqual) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} breaches: sheet=${JSON.stringify(sBreaches)} yaml=${JSON.stringify(yBreaches)}`,
+        );
+        diffs++;
+      }
+
+      // uniqueBreach: シート '-' は未設定
+      const sUBNum =
+        sheet.unique_breach === '' || sheet.unique_breach === '-'
+          ? undefined
+          : Number(sheet.unique_breach);
+      const sUBEff =
+        sheet.unique_breach_effect === '' || sheet.unique_breach_effect === '-'
+          ? undefined
+          : sheet.unique_breach_effect;
+      const yUBNum = y.uniqueBreach?.number;
+      const yUBEff = y.uniqueBreach?.effect;
+      if (sUBNum !== yUBNum) {
+        console.log(`[player][${pkg}] ${sheet.name} uniqueBreach.number: sheet=${sUBNum} yaml=${yUBNum}`);
+        diffs++;
+      }
+      if ((sUBEff ?? null) !== (yUBEff ?? null)) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} uniqueBreach.effect: sheet=${JSON.stringify(sUBEff)} yaml=${JSON.stringify(yUBEff)}`,
+        );
+        diffs++;
+      }
+
+      // uniqueCard
+      const sUCName =
+        sheet.unique_card === '' || sheet.unique_card === '-' ? undefined : sheet.unique_card;
+      const sUCType =
+        sheet.unique_card_type === '' || sheet.unique_card_type === '-'
+          ? undefined
+          : sheet.unique_card_type;
+      const sUCEff =
+        sheet.unique_card_effect === '' || sheet.unique_card_effect === '-'
+          ? undefined
+          : sheet.unique_card_effect;
+      const yUCName = y.uniqueCard?.name;
+      const yUCType = y.uniqueCard?.type;
+      const yUCEff = y.uniqueCard?.effect;
+      if ((sUCName ?? null) !== (yUCName ?? null)) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} uniqueCard.name: sheet=${JSON.stringify(sUCName)} yaml=${JSON.stringify(yUCName)}`,
+        );
+        diffs++;
+      }
+      if (normalizeType(sUCType ?? '') !== normalizeType(yUCType ?? '')) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} uniqueCard.type: sheet=${JSON.stringify(sUCType)} yaml=${JSON.stringify(yUCType)}`,
+        );
+        diffs++;
+      }
+      const sUCEffN = normalize(sUCEff ?? '');
+      const yUCEffN = normalize(yUCEff ?? '');
+      if (sUCEffN !== yUCEffN) {
+        console.log(`[player][${pkg}] ${sheet.name} uniqueCard.effect:`);
+        console.log(`  sheet: ${JSON.stringify(sUCEffN)}`);
+        console.log(`   yaml: ${JSON.stringify(yUCEffN)}`);
+        diffs++;
+      }
+
+      // hand / deck (空欄 = メイジ詳細未登録なのでスキップ)
+      const sHasPile =
+        sheet.hand_unique !== '' || sheet.deck_unique !== '';
+      if (sHasPile) {
+        const checkPile = (label: 'hand' | 'deck') => {
+          const sU = Number(sheet[`${label}_unique`]);
+          const sC = Number(sheet[`${label}_crystal`]);
+          const sS = Number(sheet[`${label}_spark`]);
+          const yP = y[label];
+          if (!yP) {
+            console.log(`[player][${pkg}] ${sheet.name} ${label}: yaml 欠落`);
+            diffs++;
+            return;
+          }
+          if (sU !== yP.unique || sC !== yP.crystal || sS !== yP.spark) {
+            console.log(
+              `[player][${pkg}] ${sheet.name} ${label}: sheet=${sU}/${sC}/${sS} yaml=${yP.unique}/${yP.crystal}/${yP.spark}`,
+            );
+            diffs++;
+          }
+        };
+        checkPile('hand');
+        checkPile('deck');
+      }
+
+      // skill
+      const sSkName = sheet.skill === '' || sheet.skill === '-' ? undefined : sheet.skill;
+      const sSkTim =
+        sheet.skill_timing === '' || sheet.skill_timing === '-' ? undefined : sheet.skill_timing;
+      const sSkEff =
+        sheet.skill_effect === '' || sheet.skill_effect === '-' ? undefined : sheet.skill_effect;
+      const sSkCh =
+        sheet.skill_charge === '' || sheet.skill_charge === '-'
+          ? undefined
+          : Number(sheet.skill_charge);
+      const yS = y.skill;
+      if ((sSkName ?? null) !== (yS?.name ?? null)) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} skill.name: sheet=${JSON.stringify(sSkName)} yaml=${JSON.stringify(yS?.name)}`,
+        );
+        diffs++;
+      }
+      if ((sSkTim ?? null) !== (yS?.timing ?? null)) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} skill.timing: sheet=${JSON.stringify(sSkTim)} yaml=${JSON.stringify(yS?.timing)}`,
+        );
+        diffs++;
+      }
+      if ((sSkCh ?? null) !== (yS?.charge ?? null)) {
+        console.log(
+          `[player][${pkg}] ${sheet.name} skill.charge: sheet=${sSkCh} yaml=${yS?.charge}`,
+        );
+        diffs++;
+      }
+      const sSkEffN = normalize(sSkEff ?? '');
+      const ySkEffN = normalize(yS?.effect ?? '');
+      if (sSkEffN !== ySkEffN) {
+        console.log(`[player][${pkg}] ${sheet.name} skill.effect:`);
+        console.log(`  sheet: ${JSON.stringify(sSkEffN)}`);
+        console.log(`   yaml: ${JSON.stringify(ySkEffN)}`);
+        diffs++;
+      }
+
+      // rule
+      const sRule = sheet.rule === '' || sheet.rule === '-' ? undefined : sheet.rule;
+      const sRuleN = normalize(sRule ?? '');
+      const yRuleN = normalize(y.rule ?? '');
+      if (sRuleN !== yRuleN) {
+        console.log(`[player][${pkg}] ${sheet.name} rule:`);
+        console.log(`  sheet: ${JSON.stringify(sRuleN)}`);
+        console.log(`   yaml: ${JSON.stringify(yRuleN)}`);
         diffs++;
       }
     }
