@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { CardList } from './CardList';
 import { MageList } from './MageList';
 import { NemesisList } from './NemesisList';
+import { NemesisCardList } from './NemesisCardList';
 
-type LibraryTab = 'card' | 'mage' | 'nemesis';
+type LibraryTab = 'card' | 'mage' | 'nemesis' | 'nemesisCard';
 
 const TABS: { key: LibraryTab; label: string }[] = [
   { key: 'card', label: 'カード' },
   { key: 'mage', label: 'メイジ' },
   { key: 'nemesis', label: 'ネメシス' },
+  { key: 'nemesisCard', label: 'ネメシス基本カード' },
 ];
 
 export function Library() {
@@ -51,6 +53,7 @@ export function Library() {
       {tab === 'card' && <CardList />}
       {tab === 'mage' && <MageList />}
       {tab === 'nemesis' && <NemesisList />}
+      {tab === 'nemesisCard' && <NemesisCardList />}
     </main>
   );
 }

@@ -2,10 +2,10 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-// 統合スプレッドシート (season / card / nemesis / player の 4 タブ構成)
+// 統合スプレッドシート (season / setup / card / nemesis / player / nemesis_card の 6 タブ構成)
 const SHEET_ID = '1XINA8TPodoFbw5LQv8dlbjL4JfKMCqiY0dkvkv5YrzI';
 
-const TABS = ['season', 'setup', 'card', 'nemesis', 'player'];
+const TABS = ['season', 'setup', 'card', 'nemesis', 'player', 'nemesis_card'];
 
 const OUT_DIR = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');
 mkdirSync(OUT_DIR, { recursive: true });

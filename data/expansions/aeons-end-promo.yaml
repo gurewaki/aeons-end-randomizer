@@ -1,6 +1,5 @@
 id: aeons-end-promo
 name: プロモーション
-badge: プロモ
 cards:
   # ---- Gem ----
   - name: エコーストーン
@@ -30,3 +29,11 @@ cards:
 
 mages: []
 nemeses: []
+
+nemesisCards:
+  - category: 基本カード
+    tier: 1
+    name: 正体不明の像
+    type: ミニオン
+    life: 7
+    effect: "継続：グレイヴホールドは1ダメージを受ける。ネメシスの階層が2以上なら、グレイヴホールドは追加で2ダメージを受ける。"

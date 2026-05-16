@@ -47,14 +47,46 @@ type YamlNemesis = {
   battle: number;
   rule: string;
 };
+type YamlNemesisCard = {
+  category: string;
+  tier: number;
+  name: string;
+  type: string;
+  life?: number;
+  shield?: number;
+  effect: string;
+};
 type YamlExpansion = {
   id: string;
   name: string;
-  badge?: string;
   cards: YamlCard[];
   mages?: YamlMage[];
   nemeses?: YamlNemesis[];
+  nemesisCards?: YamlNemesisCard[];
 };
+
+const NEMESIS_TYPE_TO_EN: Record<string, string> = {
+  Attack: 'Attack',
+  Minion: 'Minion',
+  Power: 'Power',
+  アタック: 'Attack',
+  ミニオン: 'Minion',
+  パワー: 'Power',
+};
+function normalizeNemesisType(raw: string | undefined): string {
+  if (!raw) return '';
+  return NEMESIS_TYPE_TO_EN[raw] ?? raw;
+}
+const NEMESIS_CATEGORY_TO_EN: Record<string, string> = {
+  Basic: 'Basic',
+  Advanced: 'Advanced',
+  基本カード: 'Basic',
+  上級基本カード: 'Advanced',
+};
+function normalizeNemesisCategory(raw: string | undefined): string {
+  if (!raw) return '';
+  return NEMESIS_CATEGORY_TO_EN[raw] ?? raw;
+}
 
 function parseCsv(text: string): CsvRow[] {
   const rows: string[][] = [];
@@ -121,6 +153,7 @@ type SeasonInfo = {
   season?: number;
   type?: 'main' | 'sub';
   theme?: string;
+  badge?: string;
 };
 
 function loadSeasonsYaml(): Map<string, SeasonInfo> {
@@ -128,7 +161,7 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
   const raw = yaml.load(text) as {
     season?: number;
     theme?: string;
-    packages: { name: string; type?: 'main' | 'sub' }[];
+    packages: { name: string; type?: 'main' | 'sub'; badge?: string }[];
   }[];
   const map = new Map<string, SeasonInfo>();
   for (const group of raw) {
@@ -137,6 +170,7 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
         season: group.season,
         type: p.type,
         theme: group.theme,
+        badge: p.badge,
       });
     }
   }
@@ -161,16 +195,17 @@ const knownPackages = new Set(yamlByName.keys());
   const seasonRows = parseCsv(readFileSync(join(sheetDir, 'season.csv'), 'utf8'));
   const sheetMap = new Map<
     string,
-    { season?: number; type?: string; theme?: string }
+    { season?: number; type?: string; theme?: string; badge?: string }
   >();
   for (const row of seasonRows) {
     const pkg = row.package;
     if (!pkg) continue;
     const s = row.season === '' ? undefined : Number(row.season);
     const theme = row.theme && row.theme !== '' ? row.theme : undefined;
-    sheetMap.set(pkg, { season: s, type: row.type, theme });
+    const badge = row.badge && row.badge !== '' ? row.badge : undefined;
+    sheetMap.set(pkg, { season: s, type: row.type, theme, badge });
   }
-  for (const [pkg, { season, type, theme }] of sheetMap.entries()) {
+  for (const [pkg, { season, type, theme, badge }] of sheetMap.entries()) {
     const y = seasonsYaml.get(pkg);
     if (!y) {
       console.log(`[season] YAML 欠落: package="${pkg}" season=${season} type=${type}`);
@@ -193,6 +228,10 @@ const knownPackages = new Set(yamlByName.keys());
     }
     if ((y.theme ?? null) !== (theme ?? null)) {
       console.log(`[season] ${pkg}: theme 差分 sheet=${theme} yaml=${y.theme}`);
+      diffs++;
+    }
+    if ((y.badge ?? null) !== (badge ?? null)) {
+      console.log(`[season] ${pkg}: badge 差分 sheet=${badge} yaml=${y.badge}`);
       diffs++;
     }
   }
@@ -276,15 +315,6 @@ const knownPackages = new Set(yamlByName.keys());
       }
     }
 
-    if (sheetRows.length > 0 && sheetRows[0].badge !== undefined) {
-      const sheetBadge = sheetRows[0].badge;
-      if (sheetBadge && sheetBadge !== target.expansion.badge) {
-        console.log(
-          `[card][${pkg}] badge: sheet="${sheetBadge}" yaml="${target.expansion.badge}"`,
-        );
-        diffs++;
-      }
-    }
   }
 }
 
@@ -607,6 +637,96 @@ const knownPackages = new Set(yamlByName.keys());
         diffs++;
       }
     });
+  }
+}
+
+// ============================================================
+// 6) nemesis_card tab vs YAML.nemesisCards (per known package)
+// ============================================================
+{
+  const rows = parseCsv(readFileSync(join(sheetDir, 'nemesis_card.csv'), 'utf8'));
+  const byPkg = new Map<string, CsvRow[]>();
+  for (const row of rows) {
+    if (!row.package) continue;
+    if (!knownPackages.has(row.package)) {
+      console.log(`[nemesis_card] YAML 未登録 package: "${row.package}"`);
+      diffs++;
+      continue;
+    }
+    const arr = byPkg.get(row.package) ?? [];
+    arr.push(row);
+    byPkg.set(row.package, arr);
+  }
+
+  for (const [pkg, sheetRows] of byPkg.entries()) {
+    const target = yamlByName.get(pkg)!;
+    const yamlCards = target.expansion.nemesisCards ?? [];
+    const yamlByCardName = new Map(yamlCards.map((c) => [c.name, c]));
+    const sheetByCardName = new Map(sheetRows.map((r) => [r.card_name, r]));
+
+    for (const name of sheetByCardName.keys()) {
+      if (!yamlByCardName.has(name)) {
+        console.log(`[nemesis_card][${pkg}] YAML 欠落: ${name}`);
+        diffs++;
+      }
+    }
+    for (const name of yamlByCardName.keys()) {
+      if (!sheetByCardName.has(name)) {
+        console.log(`[nemesis_card][${pkg}] シート欠落: ${name}`);
+        diffs++;
+      }
+    }
+
+    for (const sheet of sheetRows) {
+      const y = yamlByCardName.get(sheet.card_name);
+      if (!y) continue;
+      if (normalizeNemesisCategory(sheet.type_name) !== normalizeNemesisCategory(y.category)) {
+        console.log(
+          `[nemesis_card][${pkg}] ${sheet.card_name} category: sheet="${sheet.type_name}" yaml="${y.category}"`,
+        );
+        diffs++;
+      }
+      if (Number(sheet.tier) !== y.tier) {
+        console.log(
+          `[nemesis_card][${pkg}] ${sheet.card_name} tier: sheet="${sheet.tier}" yaml="${y.tier}"`,
+        );
+        diffs++;
+      }
+      if (normalizeNemesisType(sheet.card_type) !== normalizeNemesisType(y.type)) {
+        console.log(
+          `[nemesis_card][${pkg}] ${sheet.card_name} type: sheet="${sheet.card_type}" yaml="${y.type}"`,
+        );
+        diffs++;
+      }
+      const sLife =
+        sheet.minion_life === '' || sheet.minion_life === '-'
+          ? undefined
+          : Number(sheet.minion_life);
+      const sShield =
+        sheet.minion_shield === '' || sheet.minion_shield === '-'
+          ? undefined
+          : Number(sheet.minion_shield);
+      if ((sLife ?? null) !== (y.life ?? null)) {
+        console.log(
+          `[nemesis_card][${pkg}] ${sheet.card_name} life: sheet=${sLife} yaml=${y.life}`,
+        );
+        diffs++;
+      }
+      if ((sShield ?? null) !== (y.shield ?? null)) {
+        console.log(
+          `[nemesis_card][${pkg}] ${sheet.card_name} shield: sheet=${sShield} yaml=${y.shield}`,
+        );
+        diffs++;
+      }
+      const sE = normalize(sheet.effect ?? '');
+      const yE = normalize(y.effect ?? '');
+      if (sE !== yE) {
+        console.log(`[nemesis_card][${pkg}] ${sheet.card_name} effect:`);
+        console.log(`  sheet: ${JSON.stringify(sE)}`);
+        console.log(`   yaml: ${JSON.stringify(yE)}`);
+        diffs++;
+      }
+    }
   }
 }
 

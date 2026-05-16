@@ -88,6 +88,35 @@ export interface Nemesis {
   rule: string;
 }
 
+export type NemesisCardType = 'Attack' | 'Minion' | 'Power';
+
+export const NEMESIS_CARD_TYPE_LABEL: Record<NemesisCardType, string> = {
+  Attack: 'アタック',
+  Minion: 'ミニオン',
+  Power: 'パワー',
+};
+
+export type NemesisCardCategory = 'Basic' | 'Advanced';
+
+export const NEMESIS_CARD_CATEGORY_LABEL: Record<NemesisCardCategory, string> = {
+  Basic: '基本カード',
+  Advanced: '上級基本カード',
+};
+
+export interface NemesisCard {
+  id: string;
+  expansionId: string;
+  category: NemesisCardCategory;
+  tier: number;
+  name: string;
+  type: NemesisCardType;
+  /** ミニオンの体力 (Minion のみ) */
+  life?: number;
+  /** ミニオンのシールド (Minion のみ、保有する場合) */
+  shield?: number;
+  effect: string;
+}
+
 export type PackageType = 'main' | 'sub';
 
 export interface Expansion {
@@ -103,6 +132,7 @@ export interface Expansion {
   cards: Card[];
   mages: Mage[];
   nemeses: Nemesis[];
+  nemesisCards: NemesisCard[];
 }
 
 export interface SetupSlot {

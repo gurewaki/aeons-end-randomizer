@@ -13,6 +13,7 @@ type SeasonInfo = {
   season?: number;
   type?: 'main' | 'sub';
   theme?: string;
+  badge?: string;
 };
 
 /**
@@ -65,10 +66,16 @@ function loadSeasonsByPackage(): Map<string, SeasonInfo> {
           `${SEASONS_FILE}: [${gIdx}].packages[${pIdx}].type は 'main' / 'sub' / 未指定`,
         );
       }
+      if (pp.badge !== undefined && typeof pp.badge !== 'string') {
+        throw new Error(
+          `${SEASONS_FILE}: [${gIdx}].packages[${pIdx}].badge は string か未指定`,
+        );
+      }
+      const badge = pp.badge as string | undefined;
       if (map.has(pp.name)) {
         throw new Error(`${SEASONS_FILE}: package "${pp.name}" が重複`);
       }
-      map.set(pp.name, { season, type, theme });
+      map.set(pp.name, { season, type, theme, badge });
     });
   });
   return map;
@@ -132,13 +139,58 @@ type RawNemesis = {
   rule: string;
 };
 
+type NemesisCardTypeEn = 'Attack' | 'Minion' | 'Power';
+type NemesisCardCategoryEn = 'Basic' | 'Advanced';
+
+const NEMESIS_TYPE_TO_EN: Record<string, NemesisCardTypeEn> = {
+  Attack: 'Attack',
+  Minion: 'Minion',
+  Power: 'Power',
+  アタック: 'Attack',
+  ミニオン: 'Minion',
+  パワー: 'Power',
+};
+const NEMESIS_CATEGORY_TO_EN: Record<string, NemesisCardCategoryEn> = {
+  Basic: 'Basic',
+  Advanced: 'Advanced',
+  基本カード: 'Basic',
+  上級基本カード: 'Advanced',
+};
+
+function normalizeNemesisType(raw: unknown, ctx: string): NemesisCardTypeEn {
+  if (typeof raw !== 'string' || !(raw in NEMESIS_TYPE_TO_EN)) {
+    throw new Error(
+      `${ctx}: type は Attack/Minion/Power または アタック/ミニオン/パワー (受領: ${JSON.stringify(raw)})`,
+    );
+  }
+  return NEMESIS_TYPE_TO_EN[raw];
+}
+function normalizeNemesisCategory(raw: unknown, ctx: string): NemesisCardCategoryEn {
+  if (typeof raw !== 'string' || !(raw in NEMESIS_CATEGORY_TO_EN)) {
+    throw new Error(
+      `${ctx}: category は Basic/Advanced または 基本カード/上級基本カード (受領: ${JSON.stringify(raw)})`,
+    );
+  }
+  return NEMESIS_CATEGORY_TO_EN[raw];
+}
+
+type RawNemesisCard = {
+  category: NemesisCardCategoryEn;
+  tier: number;
+  name: string;
+  type: NemesisCardTypeEn;
+  life?: number;
+  shield?: number;
+  effect: string;
+};
+
 type RawExpansion = {
   id: string;
   name: string;
-  badge?: string;
   cards: RawCard[];
   mages: RawMage[];
   nemeses: RawNemesis[];
+  nemesisCards: RawNemesisCard[];
 };
 
 function validateExpansion(raw: unknown, file: string): RawExpansion {
@@ -178,14 +230,15 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
 
   const mages = parseMages(r.mages, file);
   const nemeses = parseNemeses(r.nemeses, file);
+  const nemesisCards = parseNemesisCards(r.nemesisCards, file);
 
   return {
     id: r.id,
     name: r.name,
-    badge: typeof r.badge === 'string' ? r.badge : undefined,
     cards,
     mages,
     nemeses,
+    nemesisCards,
   };
 }
 
@@ -311,6 +364,32 @@ function parseSkill(raw: unknown, ctx: string): RawMage['skill'] {
   };
 }
 
+function parseNemesisCards(raw: unknown, file: string): RawNemesisCard[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) throw new Error(`${file}: nemesisCards は配列`);
+  const seen = new Set<string>();
+  return raw.map((c, idx) => {
+    const ctx = `${file}: nemesisCards[${idx}]`;
+    if (!c || typeof c !== 'object') throw new Error(`${ctx} はオブジェクト`);
+    const r = c as Record<string, unknown>;
+    const category = normalizeNemesisCategory(r.category, `${ctx}.category`);
+    const tier = reqNumber(r.tier, `${ctx}.tier`);
+    const name = reqString(r.name, `${ctx}.name`);
+    const type = normalizeNemesisType(r.type, `${ctx}.type`);
+    const effect = reqString(r.effect, `${ctx}.effect`);
+    const life = optNumber(r.life, `${ctx}.life`);
+    const shield = optNumber(r.shield, `${ctx}.shield`);
+    if (type !== 'Minion' && (life !== undefined || shield !== undefined)) {
+      throw new Error(`${ctx}: life/shield は Minion のみ指定可`);
+    }
+    if (seen.has(name)) {
+      throw new Error(`${file}: nemesisCard name 重複: ${name}`);
+    }
+    seen.add(name);
+    return { category, tier, name, type, life, shield, effect };
+  });
+}
+
 function parseNemeses(raw: unknown, file: string): RawNemesis[] {
   if (raw === undefined || raw === null) return [];
   if (!Array.isArray(raw)) throw new Error(`${file}: nemeses は配列`);
@@ -379,7 +458,7 @@ function main() {
     return {
     id: e.id,
     name: e.name,
-    badge: e.badge,
+    badge: si?.badge,
     season: si?.season,
     type: si?.type,
     theme: si?.theme,
@@ -414,6 +493,17 @@ function main() {
       battle: n.battle,
       rule: n.rule,
     })),
+    nemesisCards: e.nemesisCards.map((c) => ({
+      id: `${e.id}:nemesisCard:${c.name}`,
+      expansionId: e.id,
+      category: c.category,
+      tier: c.tier,
+      name: c.name,
+      type: c.type,
+      life: c.life,
+      shield: c.shield,
+      effect: c.effect,
+    })),
     };
   });
 
@@ -426,9 +516,10 @@ function main() {
   const totalCards = data.reduce((n, e) => n + e.cards.length, 0);
   const totalMages = data.reduce((n, e) => n + e.mages.length, 0);
   const totalNemeses = data.reduce((n, e) => n + e.nemeses.length, 0);
+  const totalNemesisCards = data.reduce((n, e) => n + e.nemesisCards.length, 0);
   const seasonAssigned = data.filter((e) => e.season !== undefined).length;
   console.log(
-    `[build-data] 生成完了: ${expansions.length} 拡張 (シーズン割当 ${seasonAssigned}) / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} → ${path.relative(ROOT, OUT_FILE)}`,
+    `[build-data] 生成完了: ${expansions.length} 拡張 (シーズン割当 ${seasonAssigned}) / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} / ネメシスカード ${totalNemesisCards} → ${path.relative(ROOT, OUT_FILE)}`,
   );
 
   // setups

@@ -1,6 +1,5 @@
 id: aeons-end-outer-dark
 name: イーオンズ・エンド：外より来たりし闇
-badge: 外より来たりし闇
 cards:
   # ---- Gem ----
   - name: 異界元素
@@ -114,3 +113,26 @@ nemeses:
     level: 6
     battle: 4
     rule: "<レイスモンガー> と戦う。"
+
+nemesisCards:
+  - category: 基本カード
+    tier: 1
+    name: 迷宮にたなびくもの
+    type: ミニオン
+    life: 5
+    effect: |-
+      継続：プレイヤー1人は自分のセット中の呪文1枚を捨てる。
+      または
+      プレイヤー1人はチャージ1を失う。
+  - category: 基本カード
+    tier: 2
+    name: 猛攻
+    type: アタック
+    effect: "暴走（2回）。最もコストの高い呪文をセット中のプレイヤーはその呪文を自分のデッキの一番上に戻す。"
+  - category: 基本カード
+    tier: 3
+    name: 生物解体
+    type: パワー
+    effect: |-
+      廃棄：8エーテルを消費する。
+      パワー2：体力が最も多いプレイヤーは、現在の体力に等しいダメージを受ける。

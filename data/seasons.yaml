@@ -1,27 +1,28 @@
 # Source of truth: 統合スプレッドシートの season タブ
 # シーズン (= グループ) 単位で theme を定義し、配下に package を列挙する。
 # プロモなどシーズン未割当のグループは season を省略する (theme と packages のみ)。
+# badge はパッケージごとに表示用の短い識別子。
 - season: 1
   theme: '#D0C277'
   packages:
-    - { name: イーオンズ・エンド, type: main }
-    - { name: イーオンズ・エンド：深層, type: sub }
-    - { name: イーオンズ・エンド：名無きもの, type: sub }
+    - { name: イーオンズ・エンド, type: main, badge: 基本 }
+    - { name: イーオンズ・エンド：深層, type: sub, badge: 深層 }
+    - { name: イーオンズ・エンド：名無きもの, type: sub, badge: 名無きもの }
 - season: 2
   theme: '#BEBEBE'
   packages:
-    - { name: イーオンズ・エンド：終わりなき戦い, type: main }
-    - { name: イーオンズ・エンド：虚空, type: sub }
-    - { name: イーオンズ・エンド：外より来たりし闇, type: sub }
+    - { name: イーオンズ・エンド：終わりなき戦い, type: main, badge: 終わりなき戦い }
+    - { name: イーオンズ・エンド：虚空, type: sub, badge: 虚空 }
+    - { name: イーオンズ・エンド：外より来たりし闇, type: sub, badge: 外より来たりし闇 }
 - season: 3
   theme: '#7DCCF3'
   packages:
-    - { name: イーオンズ・エンド：レガシー, type: main }
-    - { name: イーオンズ・エンド：埋もれた秘密, type: sub }
+    - { name: イーオンズ・エンド：レガシー, type: main, badge: レガシー }
+    - { name: イーオンズ・エンド：埋もれた秘密, type: sub, badge: 埋もれた秘密 }
 - season: 4
   theme: '#B779F4'
   packages:
-    - { name: イーオンズ・エンド：新たな時代, type: main }
+    - { name: イーオンズ・エンド：新たな時代, type: main, badge: 新たな時代 }
 - theme: '#F47A3B'
   packages:
-    - { name: プロモーション }
+    - { name: プロモーション, badge: プロモ }
