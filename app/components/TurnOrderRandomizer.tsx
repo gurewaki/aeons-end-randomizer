@@ -329,40 +329,46 @@ export function TurnOrderRandomizer() {
             {state.discard.length} 枚
           </span>
         </h2>
-        {state.discard.length === 0 ? (
-          <p className="text-sm text-slate-400">まだ公開されたカードはありません</p>
-        ) : (
-          <ul className="flex flex-wrap items-end gap-3">
-            {state.discard.map((c, i) => {
-              const isLatest = i === 0;
-              return (
-                <li
-                  key={c.id}
-                  className={`flex flex-col items-center gap-1 ${
-                    isLatest
-                      ? 'rounded-md p-2 ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-slate-800'
-                      : ''
-                  }`}
-                >
-                  {isLatest && (
-                    <span className="text-[10px] font-semibold tracking-widest text-emerald-300">
-                      現在のターン
-                    </span>
-                  )}
-                  <TurnOrderCardFace card={c} size={isLatest ? 'normal' : 'small'} />
-                  <button
-                    type="button"
-                    onClick={() => returnDiscardToDeck(c.id)}
-                    className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-700"
-                    title="山に戻して再シャッフル"
+        {/* min-h で「最新カード + 現在のターン label + ボタン」と同じ縦サイズを確保し、
+            捨て札が空 ↔ あり の遷移でレイアウトジャンプが起きないようにする */}
+        <div className="min-h-48">
+          {state.discard.length === 0 ? (
+            <div className="flex h-48 items-center justify-center rounded-md border-2 border-dashed border-slate-700/60 text-sm text-slate-500">
+              まだ公開されたカードはありません
+            </div>
+          ) : (
+            <ul className="flex flex-wrap items-end gap-3">
+              {state.discard.map((c, i) => {
+                const isLatest = i === 0;
+                return (
+                  <li
+                    key={c.id}
+                    className={`flex flex-col items-center gap-1 ${
+                      isLatest
+                        ? 'rounded-md p-2 ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-slate-800'
+                        : ''
+                    }`}
                   >
-                    ↻ 山へ戻す
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                    {isLatest && (
+                      <span className="text-[10px] font-semibold tracking-widest text-emerald-300">
+                        現在のターン
+                      </span>
+                    )}
+                    <TurnOrderCardFace card={c} size={isLatest ? 'normal' : 'small'} />
+                    <button
+                      type="button"
+                      onClick={() => returnDiscardToDeck(c.id)}
+                      className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-700"
+                      title="山に戻して再シャッフル"
+                    >
+                      ↻ 山へ戻す
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </section>
 
       {/* Modals */}
