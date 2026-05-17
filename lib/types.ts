@@ -89,6 +89,8 @@ export interface NemesisSpecificCard {
   name: string;
   /** アタック/ミニオン/パワー でない (ストライク 等) カードは未指定 */
   type?: NemesisCardType;
+  /** type の副ラベル (例: 「ミニオン：ネメシス」の「ネメシス」) */
+  typeNote?: string;
   /** ミニオンの体力 (Minion のみ)。可変の場合は '*' */
   life?: number | '*';
   /** ミニオンのシールド (Minion のみ、保有する場合) */

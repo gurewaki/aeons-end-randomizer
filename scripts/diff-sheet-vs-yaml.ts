@@ -46,10 +46,21 @@ type YamlNemesisSpecificCard = {
   tier?: number;
   name: string;
   type?: string;
+  typeNote?: string;
   life?: number | '*';
   shield?: number;
   effect: string;
 };
+
+/**
+ * 型表記を canonical な英語キーに正規化。「ミニオン：ネメシス」のような副ラベル付きにも対応。
+ */
+function canonicalNemesisType(raw: string | undefined): string {
+  if (!raw) return '';
+  const [base, ...rest] = raw.split('：');
+  const baseEn = NEMESIS_TYPE_TO_EN[base] ?? base;
+  return rest.length > 0 ? `${baseEn}：${rest.join('：')}` : baseEn;
+}
 type YamlNemesis = {
   name: string;
   level?: number;
@@ -795,24 +806,35 @@ const knownPackages = new Set(yamlByName.keys());
     if (!target) continue;
     const { pkg, nemesis } = target;
     const yamlCards = nemesis.cards ?? [];
-    const yamlByCardName = new Map(yamlCards.map((c) => [c.name, c]));
-    const sheetByCardName = new Map(sheetRows.map((r) => [r.name, r]));
+    // 同名カードが tier 違いで存在しうるため (name, tier) タプルでキー化
+    const cardKey = (
+      r: { name: string; tier?: number | string },
+    ): string => {
+      const t = typeof r.tier === 'string' ? (r.tier === '' || r.tier === '-' ? '' : r.tier) : r.tier ?? '';
+      return `${r.name}#${t}`;
+    };
+    const yamlByKey = new Map(yamlCards.map((c) => [cardKey(c), c]));
+    const sheetByKey = new Map(sheetRows.map((r) => [cardKey({ name: r.name, tier: r.tier }), r]));
 
-    for (const name of sheetByCardName.keys()) {
-      if (!yamlByCardName.has(name)) {
-        console.log(`[nemesis_specific_card][${pkg}/${nemesisName}] YAML 欠落: ${name}`);
+    for (const [k, r] of sheetByKey.entries()) {
+      if (!yamlByKey.has(k)) {
+        console.log(
+          `[nemesis_specific_card][${pkg}/${nemesisName}] YAML 欠落: ${r.name}${r.tier ? ` (tier=${r.tier})` : ''}`,
+        );
         diffs++;
       }
     }
-    for (const name of yamlByCardName.keys()) {
-      if (!sheetByCardName.has(name)) {
-        console.log(`[nemesis_specific_card][${pkg}/${nemesisName}] シート欠落: ${name}`);
+    for (const [k, c] of yamlByKey.entries()) {
+      if (!sheetByKey.has(k)) {
+        console.log(
+          `[nemesis_specific_card][${pkg}/${nemesisName}] シート欠落: ${c.name}${c.tier !== undefined ? ` (tier=${c.tier})` : ''}`,
+        );
         diffs++;
       }
     }
 
     for (const sheet of sheetRows) {
-      const y = yamlByCardName.get(sheet.name);
+      const y = yamlByKey.get(cardKey({ name: sheet.name, tier: sheet.tier }));
       if (!y) continue;
       if (sheet.placement !== y.placement) {
         console.log(
@@ -820,19 +842,16 @@ const knownPackages = new Set(yamlByName.keys());
         );
         diffs++;
       }
-      const sTier =
-        sheet.tier === '' || sheet.tier === '-' ? undefined : Number(sheet.tier);
-      if ((sTier ?? null) !== (y.tier ?? null)) {
+      const sheetTypeRaw =
+        sheet.type === '' || sheet.type === '-' ? '' : sheet.type;
+      const yamlTypeRaw = y.type
+        ? y.typeNote
+          ? `${y.type}：${y.typeNote}`
+          : y.type
+        : '';
+      if (canonicalNemesisType(sheetTypeRaw) !== canonicalNemesisType(yamlTypeRaw)) {
         console.log(
-          `[nemesis_specific_card][${pkg}/${nemesisName}] ${sheet.name} tier: sheet=${sTier} yaml=${y.tier}`,
-        );
-        diffs++;
-      }
-      const sType =
-        sheet.type === '' || sheet.type === '-' ? undefined : sheet.type;
-      if (normalizeNemesisType(sType) !== normalizeNemesisType(y.type)) {
-        console.log(
-          `[nemesis_specific_card][${pkg}/${nemesisName}] ${sheet.name} type: sheet="${sheet.type}" yaml="${y.type}"`,
+          `[nemesis_specific_card][${pkg}/${nemesisName}] ${sheet.name} type: sheet="${sheet.type}" yaml="${yamlTypeRaw}"`,
         );
         diffs++;
       }

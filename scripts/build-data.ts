@@ -137,10 +137,35 @@ type RawNemesisSpecificCard = {
   tier?: number;
   name: string;
   type?: NemesisCardTypeEn;
+  typeNote?: string;
   life?: number | '*';
   shield?: number;
   effect: string;
 };
+
+/**
+ * 「ミニオン：ネメシス」のように type に「：」で副ラベルが付いた表記をパースする。
+ * 単に「ミニオン」と書かれていれば副ラベルは undefined。
+ */
+function parseTypeWithNote(
+  raw: unknown,
+  ctx: string,
+): { type: NemesisCardTypeEn | undefined; note: string | undefined } {
+  if (raw === undefined || raw === null) return { type: undefined, note: undefined };
+  if (typeof raw !== 'string') {
+    throw new Error(`${ctx} は string か未指定 (受領: ${JSON.stringify(raw)})`);
+  }
+  const [base, ...rest] = raw.split('：');
+  if (!(base in NEMESIS_TYPE_TO_EN)) {
+    throw new Error(
+      `${ctx}: type の基底は Attack/Minion/Power または アタック/ミニオン/パワー (受領: ${JSON.stringify(raw)})`,
+    );
+  }
+  return {
+    type: NEMESIS_TYPE_TO_EN[base],
+    note: rest.length > 0 ? rest.join('：') : undefined,
+  };
+}
 
 type RawNemesis = {
   name: string;
@@ -448,18 +473,17 @@ function parseNemesisSpecificCards(raw: unknown, ctx: string): RawNemesisSpecifi
     const tier = optNumber(r.tier, `${cardCtx}.tier`);
     const name = reqString(r.name, `${cardCtx}.name`);
     const effect = reqString(r.effect, `${cardCtx}.effect`);
-    const type =
-      r.type === undefined || r.type === null
-        ? undefined
-        : normalizeNemesisType(r.type, `${cardCtx}.type`);
+    const { type, note: typeNote } = parseTypeWithNote(r.type, `${cardCtx}.type`);
     const life = parseLife(r.life, `${cardCtx}.life`);
     const shield = optNumber(r.shield, `${cardCtx}.shield`);
     if (type !== 'Minion' && (life !== undefined || shield !== undefined)) {
       throw new Error(`${cardCtx}: life/shield は Minion のみ指定可`);
     }
-    if (seen.has(name)) throw new Error(`${ctx}: name 重複: ${name}`);
-    seen.add(name);
-    return { placement, tier, name, type, life, shield, effect };
+    // 同名カードは tier 違いに限り許容 (例: アラクノス「世界を飲み込む者」)
+    const key = `${name}#${tier ?? ''}`;
+    if (seen.has(key)) throw new Error(`${ctx}: (name, tier) 重複: ${name} tier=${tier}`);
+    seen.add(key);
+    return { placement, tier, name, type, typeNote, life, shield, effect };
   });
 }
 
@@ -542,12 +566,14 @@ function main() {
         battle: n.battle,
         rule: n.rule,
         cards: n.cards.map((c) => ({
-          id: `${nemesisId}:specificCard:${c.name}`,
+          // 同名カードが tier 違いで複数存在しうるので id にも tier を含める
+          id: `${nemesisId}:specificCard:${c.name}${c.tier !== undefined ? `#${c.tier}` : ''}`,
           nemesisId,
           placement: c.placement,
           tier: c.tier,
           name: c.name,
           type: c.type,
+          typeNote: c.typeNote,
           life: c.life,
           shield: c.shield,
           effect: c.effect,

@@ -30,6 +30,7 @@ export function NemesisSpecificCardTile({
             className={`rounded border px-2 py-0.5 text-xs font-medium ${TYPE_BADGE[card.type]}`}
           >
             {NEMESIS_CARD_TYPE_LABEL[card.type]}
+            {card.typeNote && `：${card.typeNote}`}
           </span>
         )}
         {card.tier !== undefined && (
