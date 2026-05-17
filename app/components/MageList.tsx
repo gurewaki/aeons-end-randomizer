@@ -5,8 +5,12 @@ import { EXPANSIONS } from '../../lib/data';
 import type { Mage } from '../../lib/types';
 import { ExpansionSelector } from './ExpansionSelector';
 import { MageDetailTile } from './MageDetailTile';
+import { MageTile } from './MageTile';
+import { Modal } from './Modal';
 
 export function MageList() {
+  const [selected, setSelected] = useState<Mage | null>(null);
+
   const expansionsWithMages = useMemo(
     () => EXPANSIONS.filter((e) => e.mages.length > 0),
     [],
@@ -58,6 +62,19 @@ export function MageList() {
 
   return (
     <div className="space-y-4">
+      <Modal
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        labelledBy="mage-detail-title"
+      >
+        {selected && (
+          <MageDetailTile
+            mage={selected}
+            titleId="mage-detail-title"
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </Modal>
       <ExpansionSelector
         expansions={expansionsWithMages}
         selected={expansionIds}
@@ -124,9 +141,16 @@ export function MageList() {
       </p>
 
       {filtered.length > 0 ? (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((m) => (
-            <MageDetailTile key={m.id} mage={m} />
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setSelected(m)}
+              className="rounded-md text-left transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+            >
+              <MageTile mage={m} />
+            </button>
           ))}
         </div>
       ) : (

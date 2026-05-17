@@ -44,10 +44,14 @@ export function MageDetailTile({
   mage,
   variant = 'full',
   isMustUse = false,
+  titleId,
+  onClose,
 }: {
   mage: Mage;
   variant?: 'full' | 'compact';
   isMustUse?: boolean;
+  titleId?: string;
+  onClose?: () => void;
 }) {
   const showFull = variant === 'full';
   const ringClass = isMustUse ? 'ring-2 ring-emerald-400/70' : '';
@@ -71,8 +75,18 @@ export function MageDetailTile({
             ★ 指定
           </span>
         )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="閉じる"
+            className="ml-auto rounded border border-slate-600 bg-slate-800/70 px-2 py-0.5 text-base leading-none text-slate-200 hover:bg-slate-700/70"
+          >
+            ×
+          </button>
+        )}
       </div>
-      <div className="text-xl font-bold leading-snug text-slate-50">
+      <div id={titleId} className="text-xl font-bold leading-snug text-slate-50">
         {mage.name}
       </div>
       <div className="mt-0.5 text-xs text-slate-300">{mage.job}</div>
