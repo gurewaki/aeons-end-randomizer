@@ -15,8 +15,7 @@ import {
 import { ExpansionSelector } from './ExpansionSelector';
 import { GenerateButton } from './GenerateButton';
 import { ErrorBanner } from './ErrorBanner';
-import { PackageBadge } from './PackageBadge';
-import { NemesisCardSections } from './NemesisCardSections';
+import { NemesisDetail } from './NemesisDetail';
 
 type PageMode = NemesisMode | 'basic';
 
@@ -237,34 +236,9 @@ function NemesisDisplay({
       </div>
     );
   }
+  // 通常モードは探索行ルールを隠す。それ以外は図鑑詳細と同じ。
   return (
-    <div className="space-y-6">
-      <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-          <PackageBadge expansionId={result.expansionId} />
-          {result.level !== undefined && (
-            <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5">
-              難易度 {result.level}
-            </span>
-          )}
-          <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5">
-            バトル {result.battle}
-          </span>
-        </div>
-        <h3 className="text-3xl font-bold text-slate-50 sm:text-4xl">
-          {result.name}
-        </h3>
-        {mode === 'expedition' && (
-          <div className="mt-4 border-l-4 border-emerald-500/60 bg-slate-900/60 p-3">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-slate-200">
-              {result.rule}
-            </p>
-          </div>
-        )}
-      </article>
-
-      <NemesisCardSections cards={result.cards} />
-    </div>
+    <NemesisDetail nemesis={result} hideExpeditionRule={mode === 'normal'} />
   );
 }
 
@@ -277,7 +251,7 @@ function BasicDeckDisplay({ result }: { result: BasicDeckResult | null }) {
     );
   }
   return (
-    <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
+    <article className="rounded-lg border border-amber-700/70 bg-stone-900/40 p-6 shadow-sm">
       <h3 className="mb-4 text-xl font-bold text-slate-50">
         ネメシス基本カード
       </h3>
@@ -393,6 +367,14 @@ export function NemesisRandomizer() {
     selectedBasicSeasons.has(s),
   );
 
+  // タブを切り替えたとき、前モードの生成結果が残らないようにクリア
+  const handlePageModeChange = (mode: PageMode) => {
+    setPageMode(mode);
+    setNemesisResult(null);
+    setBasicResult(null);
+    setError(null);
+  };
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
       <header className="mb-8">
@@ -405,7 +387,7 @@ export function NemesisRandomizer() {
       </header>
 
       <div className="space-y-4">
-        <ModeTabs value={pageMode} onChange={setPageMode} />
+        <ModeTabs value={pageMode} onChange={handlePageModeChange} />
 
         {pageMode !== 'basic' && (
           <ExpansionSelector

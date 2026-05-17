@@ -83,7 +83,7 @@ export function NemesisCardSections({
         const totalCount = pg.tierGroups.reduce((n, t) => n + t.cards.length, 0);
         return (
           <section key={pg.placement} className="space-y-3">
-            <h3 className="border-l-4 border-rose-500/60 pl-3 text-lg font-semibold text-slate-100">
+            <h3 className="border-l-4 border-amber-700/70 pl-3 text-lg font-semibold text-slate-100">
               {pg.placement}
               <span className="ml-2 text-sm font-normal text-slate-400">
                 {totalCount} 枚

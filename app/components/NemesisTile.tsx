@@ -23,11 +23,6 @@ export function NemesisTile({ nemesis }: { nemesis: Nemesis }) {
           </span>
         )}
       </div>
-      {nemesis.rule && (
-        <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-slate-300">
-          {nemesis.rule}
-        </p>
-      )}
     </div>
   );
 }
