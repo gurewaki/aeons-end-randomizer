@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navigation } from './components/Navigation';
+import { TurnOrderProgressProvider } from './components/TurnOrderProgressContext';
 
 export const metadata: Metadata = {
   title: {
@@ -18,8 +19,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="min-h-screen antialiased">
-        <Navigation />
-        {children}
+        <TurnOrderProgressProvider>
+          <Navigation />
+          {children}
+        </TurnOrderProgressProvider>
       </body>
     </html>
   );

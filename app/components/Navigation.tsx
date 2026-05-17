@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTurnOrderProgress } from './TurnOrderProgressContext';
 
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: '/', label: 'サプライ' },
   { href: '/nemesis', label: 'ネメシス' },
   { href: '/player', label: 'プレイヤー' },
+  { href: '/turn-order', label: 'ターン順' },
   { href: '/library', label: '図鑑' },
 ];
 
@@ -17,6 +19,25 @@ function isActive(pathname: string, href: string): boolean {
 
 export function Navigation() {
   const pathname = usePathname() ?? '/';
+  const { inProgress } = useTurnOrderProgress();
+
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    // ターン順カード進行中 + ターン順以外への遷移 → 確認
+    if (
+      inProgress &&
+      pathname.startsWith('/turn-order') &&
+      !href.startsWith('/turn-order')
+    ) {
+      const ok = window.confirm(
+        'ターン順カードの公開が進行中です。離れると山と捨て札がリセットされます。よろしいですか？',
+      );
+      if (!ok) e.preventDefault();
+    }
+  };
+
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-6">
@@ -33,6 +54,7 @@ export function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className={
                   'whitespace-nowrap rounded px-3 py-1.5 text-sm transition ' +
                   (active

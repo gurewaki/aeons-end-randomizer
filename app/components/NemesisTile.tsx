@@ -14,14 +14,14 @@ export function NemesisTile({ nemesis }: { nemesis: Nemesis }) {
         <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5 text-xs text-slate-300">
           バトル {nemesis.battle}
         </span>
-      </div>
-      <div className="flex flex-wrap items-baseline gap-x-3 leading-snug">
-        <span className="text-xl font-bold text-slate-50">{nemesis.name}</span>
         {nemesis.life !== undefined && (
-          <span className="text-base font-bold text-red-400">
+          <span className="rounded border border-red-500/60 bg-red-500/20 px-2 py-0.5 text-xs text-red-200">
             体力 {nemesis.life}
           </span>
         )}
+      </div>
+      <div className="text-xl font-bold leading-snug text-slate-50">
+        {nemesis.name}
       </div>
     </div>
   );
