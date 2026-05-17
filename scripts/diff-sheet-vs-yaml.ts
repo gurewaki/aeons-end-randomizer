@@ -71,6 +71,11 @@ function canonicalNemesisType(raw: string | undefined): string {
 type YamlNemesis = {
   name: string;
   level?: number;
+  life?: number;
+  unleash?: string;
+  additionalRules?: string;
+  setup?: string;
+  increasedDifficulty?: string;
   battle: number;
   rule: string;
   cards?: YamlNemesisSpecificCard[];
@@ -213,7 +218,13 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
 }
 
 function normalize(s: string): string {
-  return s.replace(/\r\n/g, '\n').replace(/\s+$/, '');
+  return s
+    .replace(/\r\n/g, '\n')
+    // 各行末尾の空白を除去 (シート編集で混入するゴミ空白を吸収)
+    .split('\n')
+    .map((line) => line.replace(/\s+$/, ''))
+    .join('\n')
+    .replace(/\s+$/, '');
 }
 
 const sheetDir = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');
@@ -393,17 +404,50 @@ const knownPackages = new Set(yamlByName.keys());
         console.log(`[nemesis][${pkg}] ${sheet.name} level: sheet="${sLevel}" yaml="${y.level}"`);
         diffs++;
       }
-      if (Number(sheet.battle) !== y.battle) {
-        console.log(`[nemesis][${pkg}] ${sheet.name} battle: sheet="${sheet.battle}" yaml="${y.battle}"`);
+      // 探索行モード固有のフィールドは sheet 側で expedition_ プレフィックスを持つ
+      if (Number(sheet.expedition_battle) !== y.battle) {
+        console.log(
+          `[nemesis][${pkg}] ${sheet.name} battle: sheet="${sheet.expedition_battle}" yaml="${y.battle}"`,
+        );
         diffs++;
       }
-      const sR = normalize(sheet.rule ?? '');
+      const sR = normalize(sheet.expedition_rule ?? '');
       const yR = normalize(y.rule ?? '');
       if (sR !== yR) {
         console.log(`[nemesis][${pkg}] ${sheet.name} rule:`);
         console.log(`  sheet: ${JSON.stringify(sR)}`);
         console.log(`   yaml: ${JSON.stringify(yR)}`);
         diffs++;
+      }
+      // 通常モード共通フィールド
+      const sLife =
+        sheet.life === '' || sheet.life === '-' ? undefined : Number(sheet.life);
+      if ((sLife ?? null) !== (y.life ?? null)) {
+        console.log(
+          `[nemesis][${pkg}] ${sheet.name} life: sheet=${sLife} yaml=${y.life}`,
+        );
+        diffs++;
+      }
+      const longFields: [string, keyof YamlNemesis][] = [
+        ['unleash', 'unleash'],
+        ['additional_rules', 'additionalRules'],
+        ['setup', 'setup'],
+        ['increased_difficulty', 'increasedDifficulty'],
+      ];
+      for (const [sheetCol, yamlKey] of longFields) {
+        const sv =
+          sheet[sheetCol] === '' || sheet[sheetCol] === '-'
+            ? undefined
+            : sheet[sheetCol];
+        const yv = y[yamlKey] as string | undefined;
+        const sNorm = normalize(sv ?? '');
+        const yNorm = normalize(yv ?? '');
+        if (sNorm !== yNorm) {
+          console.log(`[nemesis][${pkg}] ${sheet.name} ${sheetCol}:`);
+          console.log(`  sheet: ${JSON.stringify(sNorm)}`);
+          console.log(`   yaml: ${JSON.stringify(yNorm)}`);
+          diffs++;
+        }
       }
     }
   }

@@ -178,6 +178,11 @@ function parseTypeWithNote(
 type RawNemesis = {
   name: string;
   level?: number;
+  life?: number;
+  unleash?: string;
+  additionalRules?: string;
+  setup?: string;
+  increasedDifficulty?: string;
   battle: number;
   rule: string;
   cards: RawNemesisSpecificCard[];
@@ -515,18 +520,27 @@ function parseNemeses(raw: unknown, file: string): RawNemesis[] {
     if (typeof r.rule !== 'string') throw new Error(`${file}: nemeses[${idx}].rule`);
     if (seen.has(r.name)) throw new Error(`${file}: nemesis name 重複: ${r.name}`);
     seen.add(r.name);
-    const level =
-      r.level === undefined || r.level === null
-        ? undefined
-        : typeof r.level === 'number'
-          ? r.level
-          : (() => {
-              throw new Error(`${file}: nemeses[${idx}].level は number か未指定`);
-            })();
+    const level = optNumber(r.level, `${file}: nemeses[${idx}].level`);
+    const life = optNumber(r.life, `${file}: nemeses[${idx}].life`);
+    const unleash = optString(r.unleash, `${file}: nemeses[${idx}].unleash`);
+    const additionalRules = optString(
+      r.additionalRules,
+      `${file}: nemeses[${idx}].additionalRules`,
+    );
+    const setup = optString(r.setup, `${file}: nemeses[${idx}].setup`);
+    const increasedDifficulty = optString(
+      r.increasedDifficulty,
+      `${file}: nemeses[${idx}].increasedDifficulty`,
+    );
     const cards = parseNemesisSpecificCards(r.cards, `${file}: nemeses[${idx}=${r.name}].cards`);
     return {
       name: r.name,
       level,
+      life,
+      unleash,
+      additionalRules,
+      setup,
+      increasedDifficulty,
       battle: r.battle,
       rule: r.rule,
       cards,
@@ -647,6 +661,11 @@ function main() {
         expansionId: e.id,
         name: n.name,
         level: n.level,
+        life: n.life,
+        unleash: n.unleash,
+        additionalRules: n.additionalRules,
+        setup: n.setup,
+        increasedDifficulty: n.increasedDifficulty,
         battle: n.battle,
         rule: n.rule,
         cards: n.cards.map((c) => ({

@@ -15,8 +15,13 @@ export function NemesisTile({ nemesis }: { nemesis: Nemesis }) {
           バトル {nemesis.battle}
         </span>
       </div>
-      <div className="text-xl font-bold leading-snug text-slate-50">
-        {nemesis.name}
+      <div className="flex flex-wrap items-baseline gap-x-3 leading-snug">
+        <span className="text-xl font-bold text-slate-50">{nemesis.name}</span>
+        {nemesis.life !== undefined && (
+          <span className="text-base font-bold text-red-400">
+            体力 {nemesis.life}
+          </span>
+        )}
       </div>
       {nemesis.rule && (
         <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-slate-300">

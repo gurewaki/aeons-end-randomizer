@@ -1,6 +1,8 @@
+import { Fragment } from 'react';
 import type { Nemesis } from '../../lib/types';
 import { PackageBadge } from './PackageBadge';
 import { NemesisCardSections } from './NemesisCardSections';
+import { RuleText } from './RuleText';
 
 /**
  * ネメシスのヘッダ + ルール + 固有カードを表示する詳細ビュー。
@@ -15,6 +17,14 @@ export function NemesisDetail({
   titleId?: string;
   onClose?: () => void;
 }) {
+  // 通常モード共通のテキストフィールドをラベル順に表示
+  const ruleSections: { label: string; text: string | undefined }[] = [
+    { label: 'ゲーム準備', text: nemesis.setup },
+    { label: '追加ルール', text: nemesis.additionalRules },
+    { label: '暴走効果', text: nemesis.unleash },
+    { label: '難化ルール', text: nemesis.increasedDifficulty },
+  ];
+
   return (
     <div className="space-y-6">
       <article className="rounded-lg border border-rose-500/60 bg-rose-950/30 p-6 shadow-sm">
@@ -28,6 +38,11 @@ export function NemesisDetail({
           <span className="rounded border border-slate-600 bg-slate-700/40 px-2 py-0.5">
             バトル {nemesis.battle}
           </span>
+          {nemesis.life !== undefined && (
+            <span className="rounded border border-red-500/60 bg-red-500/20 px-2 py-0.5 text-red-200">
+              体力 {nemesis.life}
+            </span>
+          )}
           {onClose && (
             <button
               type="button"
@@ -46,6 +61,27 @@ export function NemesisDetail({
           {nemesis.name}
         </h2>
       </article>
+
+      {ruleSections.some((s) => s.text) && (
+        <div className="space-y-4">
+          {ruleSections.map(
+            (s) =>
+              s.text && (
+                <Fragment key={s.label}>
+                  <section>
+                    <h3 className="mb-2 border-l-4 border-rose-500/60 pl-3 text-lg font-semibold text-slate-100">
+                      {s.label}
+                    </h3>
+                    <RuleText
+                      text={s.text}
+                      className="text-sm leading-relaxed text-slate-200"
+                    />
+                  </section>
+                </Fragment>
+              ),
+          )}
+        </div>
+      )}
 
       <NemesisCardSections cards={nemesis.cards} />
     </div>

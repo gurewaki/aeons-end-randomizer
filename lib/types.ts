@@ -116,7 +116,19 @@ export interface Nemesis {
   expansionId: string;
   name: string;
   level?: number;
+  /** 体力 */
+  life?: number;
+  /** 暴走効果 */
+  unleash?: string;
+  /** 追加ルール */
+  additionalRules?: string;
+  /** ゲーム準備 */
+  setup?: string;
+  /** 難化ルール */
+  increasedDifficulty?: string;
+  /** 探索行モードでのバトル数 */
   battle: number;
+  /** 探索行モードでの選択時に表示するルール */
   rule: string;
   /** ネメシス固有カード (基本デッキの共有カードと別管理) */
   cards: NemesisSpecificCard[];
