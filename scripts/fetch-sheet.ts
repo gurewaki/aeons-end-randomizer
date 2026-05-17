@@ -2,7 +2,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-// 統合スプレッドシート (season / setup / card / nemesis / player / nemesis_card / nemesis_specific_card の 7 タブ構成)
+// 統合スプレッドシート (8 タブ構成)
 const SHEET_ID = '1XINA8TPodoFbw5LQv8dlbjL4JfKMCqiY0dkvkv5YrzI';
 
 const TABS = [
@@ -13,6 +13,7 @@ const TABS = [
   'player',
   'nemesis_card',
   'nemesis_specific_card',
+  'treasure',
 ];
 
 const OUT_DIR = process.argv[2] ?? join(tmpdir(), 'aeons-end-sheets');

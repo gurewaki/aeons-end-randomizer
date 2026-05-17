@@ -138,6 +138,18 @@ export interface NemesisCard {
   effect: string;
 }
 
+export type TreasureLevel = 1 | 2 | 3;
+
+export interface Treasure {
+  id: string;
+  expansionId: string;
+  level: TreasureLevel;
+  name: string;
+  /** レベル1 のみ。プレイヤーカードと同じく宝石/遺物/呪文 のいずれか */
+  type?: CardType;
+  effect: string;
+}
+
 export type PackageType = 'main' | 'sub';
 
 export interface Expansion {
@@ -154,6 +166,7 @@ export interface Expansion {
   mages: Mage[];
   nemeses: Nemesis[];
   nemesisCards: NemesisCard[];
+  treasures: Treasure[];
 }
 
 export interface SetupSlot {

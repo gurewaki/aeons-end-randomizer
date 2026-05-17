@@ -122,7 +122,7 @@ export function MageDetailTile({
         </>
       )}
 
-      {mage.uniqueCard && (
+      {showFull && mage.uniqueCard && (
         <>
           <SectionLabel>固有カード</SectionLabel>
           <div className="text-sm">

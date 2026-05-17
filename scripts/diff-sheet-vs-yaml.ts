@@ -77,6 +77,12 @@ type YamlNemesisCard = {
   shield?: number;
   effect: string;
 };
+type YamlTreasure = {
+  level: number;
+  name: string;
+  type?: string;
+  effect: string;
+};
 type YamlExpansion = {
   id: string;
   name: string;
@@ -84,6 +90,7 @@ type YamlExpansion = {
   mages?: YamlMage[];
   nemeses?: YamlNemesis[];
   nemesisCards?: YamlNemesisCard[];
+  treasures?: YamlTreasure[];
 };
 
 const NEMESIS_TYPE_TO_EN: Record<string, string> = {
@@ -883,6 +890,72 @@ const knownPackages = new Set(yamlByName.keys());
         console.log(
           `[nemesis_specific_card][${pkg}/${nemesisName}] ${sheet.name} effect:`,
         );
+        console.log(`  sheet: ${JSON.stringify(sE)}`);
+        console.log(`   yaml: ${JSON.stringify(yE)}`);
+        diffs++;
+      }
+    }
+  }
+}
+
+// ============================================================
+// 8) treasure tab vs YAML.treasures (per known package)
+// ============================================================
+{
+  const rows = parseCsv(readFileSync(join(sheetDir, 'treasure.csv'), 'utf8'));
+  const byPkg = new Map<string, CsvRow[]>();
+  for (const row of rows) {
+    if (!row.package) continue;
+    if (!knownPackages.has(row.package)) {
+      console.log(`[treasure] YAML 未登録 package: "${row.package}"`);
+      diffs++;
+      continue;
+    }
+    const arr = byPkg.get(row.package) ?? [];
+    arr.push(row);
+    byPkg.set(row.package, arr);
+  }
+
+  for (const [pkg, sheetRows] of byPkg.entries()) {
+    const target = yamlByName.get(pkg)!;
+    const yamlTreasures = target.expansion.treasures ?? [];
+    const yamlByName2 = new Map(yamlTreasures.map((t) => [t.name, t]));
+    const sheetByName = new Map(sheetRows.map((r) => [r.name, r]));
+
+    for (const name of sheetByName.keys()) {
+      if (!yamlByName2.has(name)) {
+        console.log(`[treasure][${pkg}] YAML 欠落: ${name}`);
+        diffs++;
+      }
+    }
+    for (const name of yamlByName2.keys()) {
+      if (!sheetByName.has(name)) {
+        console.log(`[treasure][${pkg}] シート欠落: ${name}`);
+        diffs++;
+      }
+    }
+
+    for (const sheet of sheetRows) {
+      const y = yamlByName2.get(sheet.name);
+      if (!y) continue;
+      const sLevel = Number(sheet.level);
+      if (sLevel !== y.level) {
+        console.log(
+          `[treasure][${pkg}] ${sheet.name} level: sheet=${sLevel} yaml=${y.level}`,
+        );
+        diffs++;
+      }
+      const sType = sheet.type === '' || sheet.type === '-' ? undefined : sheet.type;
+      if (normalizeType(sType) !== normalizeType(y.type)) {
+        console.log(
+          `[treasure][${pkg}] ${sheet.name} type: sheet="${sheet.type}" yaml="${y.type}"`,
+        );
+        diffs++;
+      }
+      const sE = normalize(sheet.effect ?? '');
+      const yE = normalize(y.effect ?? '');
+      if (sE !== yE) {
+        console.log(`[treasure][${pkg}] ${sheet.name} effect:`);
         console.log(`  sheet: ${JSON.stringify(sE)}`);
         console.log(`   yaml: ${JSON.stringify(yE)}`);
         diffs++;

@@ -220,6 +220,15 @@ type RawNemesisCard = {
   effect: string;
 };
 
+type TreasureLevelN = 1 | 2 | 3;
+
+type RawTreasure = {
+  level: TreasureLevelN;
+  name: string;
+  type?: CardTypeEn;
+  effect: string;
+};
+
 type RawExpansion = {
   id: string;
   name: string;
@@ -227,6 +236,7 @@ type RawExpansion = {
   mages: RawMage[];
   nemeses: RawNemesis[];
   nemesisCards: RawNemesisCard[];
+  treasures: RawTreasure[];
 };
 
 function validateExpansion(raw: unknown, file: string): RawExpansion {
@@ -267,6 +277,7 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
   const mages = parseMages(r.mages, file);
   const nemeses = parseNemeses(r.nemeses, file);
   const nemesisCards = parseNemesisCards(r.nemesisCards, file);
+  const treasures = parseTreasures(r.treasures, file);
 
   return {
     id: r.id,
@@ -275,6 +286,7 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
     mages,
     nemeses,
     nemesisCards,
+    treasures,
   };
 }
 
@@ -398,6 +410,36 @@ function parseSkill(raw: unknown, ctx: string): RawMage['skill'] {
     effect: reqString(r.effect, `${ctx}.effect`),
     charge: optNumber(r.charge, `${ctx}.charge`),
   };
+}
+
+function parseTreasures(raw: unknown, file: string): RawTreasure[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) throw new Error(`${file}: treasures は配列`);
+  const seen = new Set<string>();
+  return raw.map((t, idx) => {
+    const ctx = `${file}: treasures[${idx}]`;
+    if (!t || typeof t !== 'object') throw new Error(`${ctx} はオブジェクト`);
+    const r = t as Record<string, unknown>;
+    const level = reqNumber(r.level, `${ctx}.level`);
+    if (level !== 1 && level !== 2 && level !== 3) {
+      throw new Error(`${ctx}.level は 1/2/3 のいずれか (受領: ${level})`);
+    }
+    const name = reqString(r.name, `${ctx}.name`);
+    const effect = reqString(r.effect, `${ctx}.effect`);
+    const type =
+      r.type === undefined || r.type === null
+        ? undefined
+        : normalizeType(r.type, `${ctx}.type`);
+    if (level === 1 && type === undefined) {
+      throw new Error(`${ctx}: レベル1 トレジャーは type 必須 (宝石/遺物/呪文)`);
+    }
+    if (level !== 1 && type !== undefined) {
+      throw new Error(`${ctx}: type はレベル1 トレジャーのみ指定可`);
+    }
+    if (seen.has(name)) throw new Error(`${file}: treasure name 重複: ${name}`);
+    seen.add(name);
+    return { level: level as TreasureLevelN, name, type, effect };
+  });
 }
 
 function parseNemesisCards(raw: unknown, file: string): RawNemesisCard[] {
@@ -591,6 +633,14 @@ function main() {
       shield: c.shield,
       effect: c.effect,
     })),
+    treasures: e.treasures.map((t) => ({
+      id: `${e.id}:treasure:${t.name}`,
+      expansionId: e.id,
+      level: t.level,
+      name: t.name,
+      type: t.type,
+      effect: t.effect,
+    })),
     };
   });
 
@@ -604,9 +654,10 @@ function main() {
   const totalMages = data.reduce((n, e) => n + e.mages.length, 0);
   const totalNemeses = data.reduce((n, e) => n + e.nemeses.length, 0);
   const totalNemesisCards = data.reduce((n, e) => n + e.nemesisCards.length, 0);
+  const totalTreasures = data.reduce((n, e) => n + e.treasures.length, 0);
   const seasonAssigned = data.filter((e) => e.season !== undefined).length;
   console.log(
-    `[build-data] 生成完了: ${expansions.length} 拡張 (シーズン割当 ${seasonAssigned}) / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} / ネメシスカード ${totalNemesisCards} → ${path.relative(ROOT, OUT_FILE)}`,
+    `[build-data] 生成完了: ${expansions.length} 拡張 (シーズン割当 ${seasonAssigned}) / カード ${totalCards} / メイジ ${totalMages} / ネメシス ${totalNemeses} / ネメシスカード ${totalNemesisCards} / トレジャー ${totalTreasures} → ${path.relative(ROOT, OUT_FILE)}`,
   );
 
   // setups

@@ -5,14 +5,21 @@ import { CardList } from './CardList';
 import { MageList } from './MageList';
 import { NemesisList } from './NemesisList';
 import { NemesisCardList } from './NemesisCardList';
+import { TreasureList } from './TreasureList';
 
-type LibraryTab = 'card' | 'mage' | 'nemesis' | 'nemesisCard';
+type LibraryTab =
+  | 'card'
+  | 'mage'
+  | 'nemesis'
+  | 'nemesisCard'
+  | 'treasure';
 
 const TABS: { key: LibraryTab; label: string }[] = [
   { key: 'card', label: 'カード' },
   { key: 'mage', label: 'メイジ' },
   { key: 'nemesis', label: 'ネメシス' },
   { key: 'nemesisCard', label: 'ネメシス基本カード' },
+  { key: 'treasure', label: 'トレジャーカード' },
 ];
 
 export function Library() {
@@ -54,6 +61,7 @@ export function Library() {
       {tab === 'mage' && <MageList />}
       {tab === 'nemesis' && <NemesisList />}
       {tab === 'nemesisCard' && <NemesisCardList />}
+      {tab === 'treasure' && <TreasureList />}
     </main>
   );
 }
