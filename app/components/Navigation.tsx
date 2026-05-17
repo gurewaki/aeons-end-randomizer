@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ChessKnight } from 'lucide-react';
 import { useTurnOrderProgress } from './TurnOrderProgressContext';
 
 const NAV_ITEMS: { href: string; label: string }[] = [
@@ -43,8 +44,9 @@ export function Navigation() {
       <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-6">
         <Link
           href="/"
-          className="text-base font-bold text-slate-100 sm:text-lg"
+          className="flex items-center gap-2 text-base font-bold text-slate-100 sm:text-lg"
         >
+          <ChessKnight className="h-5 w-5 text-amber-400" aria-hidden="true" />
           イーオンズ・エンド
         </Link>
         <nav className="-mx-1 flex gap-1 overflow-x-auto">
