@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { AetherIcon } from './AetherIcon';
 
 /**
  * 効果文を「または」を区切り行とみなして分割する。
@@ -64,6 +65,9 @@ const VARIABLE_PATTERNS = [
   '<[^>]+>', // <XXX> (カッコ込みで太字化)
 ];
 
+// アイコン化する語 (太字ではなく <img> に置換)
+const ICON_TERMS = ['エーテル'];
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -71,11 +75,20 @@ function escapeRegex(s: string): string {
 // 長い用語を先にマッチさせるためソート
 const sortedFixed = [...FIXED_TERMS].sort((a, b) => b.length - a.length);
 const EMPHASIS_RE = new RegExp(
-  [...VARIABLE_PATTERNS, ...sortedFixed.map(escapeRegex)].join('|'),
+  [
+    ...VARIABLE_PATTERNS,
+    ...sortedFixed.map(escapeRegex),
+    ...ICON_TERMS.map(escapeRegex),
+  ].join('|'),
   'g',
 );
 
-function renderEmphasized(text: string): ReactNode {
+/**
+ * テキストを React ノードに変換する。
+ * - ゲーム用語は太字化 (`<strong>`)
+ * - 「エーテル」はアイコン画像に置換 (`<AetherIcon>`)
+ */
+export function renderRichText(text: string): ReactNode {
   const matches = [...text.matchAll(EMPHASIS_RE)];
   if (matches.length === 0) return text;
   const nodes: ReactNode[] = [];
@@ -84,11 +97,15 @@ function renderEmphasized(text: string): ReactNode {
     const start = m.index ?? 0;
     const end = start + m[0].length;
     if (start > lastIdx) nodes.push(text.slice(lastIdx, start));
-    nodes.push(
-      <strong key={i} className="font-bold text-slate-100">
-        {m[0]}
-      </strong>,
-    );
+    if (m[0] === 'エーテル') {
+      nodes.push(<AetherIcon key={i} />);
+    } else {
+      nodes.push(
+        <strong key={i} className="font-bold text-slate-100">
+          {m[0]}
+        </strong>,
+      );
+    }
     lastIdx = end;
   });
   if (lastIdx < text.length) nodes.push(text.slice(lastIdx));
@@ -113,7 +130,7 @@ export function EffectText({
       {segments.map((seg, i) => (
         <Fragment key={i}>
           {i > 0 && <OrDivider />}
-          <p className="whitespace-pre-line">{renderEmphasized(seg)}</p>
+          <p className="whitespace-pre-line">{renderRichText(seg)}</p>
         </Fragment>
       ))}
     </div>

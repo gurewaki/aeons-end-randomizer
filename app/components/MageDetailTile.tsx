@@ -3,6 +3,7 @@ import type { BreachSymbol, Mage, CardType } from '../../lib/types';
 import { CARD_TYPE_LABEL } from '../../lib/types';
 import { PackageBadge } from './PackageBadge';
 import { EffectText } from './EffectText';
+import { RuleText } from './RuleText';
 
 const BREACH_STYLE: Record<BreachSymbol, { className: string; label: string }> = {
   o: { className: 'border-emerald-500/60 bg-emerald-500/20 text-emerald-200', label: '○' },
@@ -195,9 +196,10 @@ export function MageDetailTile({
       {showFull && mage.rule && (
         <>
           <SectionLabel>ルール</SectionLabel>
-          <p className="whitespace-pre-line text-xs leading-relaxed text-slate-300">
-            {mage.rule}
-          </p>
+          <RuleText
+            text={mage.rule}
+            className="text-xs leading-relaxed text-slate-300"
+          />
         </>
       )}
 

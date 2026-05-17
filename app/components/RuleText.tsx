@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { renderRichText } from './EffectText';
 
 /**
  * 行頭が `- ` または `・` の連続行を箇条書きとみなして `<ul>` に変換する。
@@ -59,11 +60,13 @@ export function RuleText({
       {blocks.map((b, i) => (
         <Fragment key={i}>
           {b.kind === 'para' ? (
-            <p className="whitespace-pre-line">{b.lines.join('\n')}</p>
+            <p className="whitespace-pre-line">
+              {renderRichText(b.lines.join('\n'))}
+            </p>
           ) : (
             <ul className="list-disc space-y-1 pl-5">
               {b.items.map((item, j) => (
-                <li key={j}>{item}</li>
+                <li key={j}>{renderRichText(item)}</li>
               ))}
             </ul>
           )}
