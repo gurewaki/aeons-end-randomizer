@@ -112,6 +112,13 @@ type RawCard = {
 
 type BreachSymbol = 'o' | '↑' | '↓' | '←' | '→' | 'x';
 
+type RawMageSpecificCard = {
+  placement: string;
+  name: string;
+  type?: CardTypeEn;
+  effect: string;
+};
+
 type RawMage = {
   name: string;
   job: string;
@@ -128,6 +135,7 @@ type RawMage = {
     charge?: number;
   };
   rule?: string;
+  cards: RawMageSpecificCard[];
 };
 
 const VALID_BREACH = new Set(['o', '↑', '↓', '←', '→', 'x']);
@@ -311,6 +319,7 @@ function parseMages(raw: unknown, file: string): RawMage[] {
     const deck = parseInitialPile(r.deck, `${ctx}.deck`);
     const skill = parseSkill(r.skill, `${ctx}.skill`);
     const rule = optString(r.rule, `${ctx}.rule`);
+    const cards = parseMageSpecificCards(r.cards, `${ctx}.cards`);
 
     return {
       name: r.name,
@@ -323,7 +332,29 @@ function parseMages(raw: unknown, file: string): RawMage[] {
       deck,
       skill,
       rule,
+      cards,
     };
+  });
+}
+
+function parseMageSpecificCards(raw: unknown, ctx: string): RawMageSpecificCard[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) throw new Error(`${ctx} は配列`);
+  const seen = new Set<string>();
+  return raw.map((c, idx) => {
+    const cardCtx = `${ctx}[${idx}]`;
+    if (!c || typeof c !== 'object') throw new Error(`${cardCtx} はオブジェクト`);
+    const r = c as Record<string, unknown>;
+    const placement = reqString(r.placement, `${cardCtx}.placement`);
+    const name = reqString(r.name, `${cardCtx}.name`);
+    const effect = reqString(r.effect, `${cardCtx}.effect`);
+    const type =
+      r.type === undefined || r.type === null
+        ? undefined
+        : normalizeType(r.type, `${cardCtx}.type`);
+    if (seen.has(name)) throw new Error(`${ctx}: name 重複: ${name}`);
+    seen.add(name);
+    return { placement, name, type, effect };
   });
 }
 
@@ -584,20 +615,31 @@ function main() {
       effect: c.effect,
       keywords: c.keywords,
     })),
-    mages: e.mages.map((m) => ({
-      id: `${e.id}:mage:${m.name}`,
-      expansionId: e.id,
-      name: m.name,
-      job: m.job,
-      level: m.level,
-      breaches: m.breaches,
-      uniqueBreach: m.uniqueBreach,
-      uniqueCard: m.uniqueCard,
-      hand: m.hand,
-      deck: m.deck,
-      skill: m.skill,
-      rule: m.rule,
-    })),
+    mages: e.mages.map((m) => {
+      const mageId = `${e.id}:mage:${m.name}`;
+      return {
+        id: mageId,
+        expansionId: e.id,
+        name: m.name,
+        job: m.job,
+        level: m.level,
+        breaches: m.breaches,
+        uniqueBreach: m.uniqueBreach,
+        uniqueCard: m.uniqueCard,
+        hand: m.hand,
+        deck: m.deck,
+        skill: m.skill,
+        rule: m.rule,
+        cards: m.cards.map((c) => ({
+          id: `${mageId}:card:${c.name}`,
+          mageId,
+          placement: c.placement,
+          name: c.name,
+          type: c.type,
+          effect: c.effect,
+        })),
+      };
+    }),
     nemeses: e.nemeses.map((n) => {
       const nemesisId = `${e.id}:nemesis:${n.name}`;
       return {

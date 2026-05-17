@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { BreachSymbol, Mage, CardType } from '../../lib/types';
 import { CARD_TYPE_LABEL } from '../../lib/types';
 import { PackageBadge } from './PackageBadge';
@@ -199,6 +200,46 @@ export function MageDetailTile({
           </p>
         </>
       )}
+
+      {showFull &&
+        mage.cards.length > 0 &&
+        // placement の出現順を保持してグルーピング
+        (() => {
+          const groups: { placement: string; cards: typeof mage.cards }[] = [];
+          const idx = new Map<string, number>();
+          for (const c of mage.cards) {
+            let i = idx.get(c.placement);
+            if (i === undefined) {
+              i = groups.length;
+              idx.set(c.placement, i);
+              groups.push({ placement: c.placement, cards: [] });
+            }
+            groups[i].cards.push(c);
+          }
+          return groups.map((g) => (
+            <Fragment key={g.placement}>
+              <SectionLabel>{g.placement}</SectionLabel>
+              {g.cards.map((c) => (
+                <div key={c.id} className="mb-1.5 last:mb-0">
+                  <div className="text-sm">
+                    <span className="font-semibold text-slate-100">{c.name}</span>
+                    {c.type && (
+                      <span
+                        className={`ml-2 text-xs ${TYPE_TEXT_COLOR[c.type]}`}
+                      >
+                        [{CARD_TYPE_LABEL[c.type]}]
+                      </span>
+                    )}
+                  </div>
+                  <EffectText
+                    text={c.effect}
+                    className="mt-0.5 text-xs leading-relaxed text-slate-300"
+                  />
+                </div>
+              ))}
+            </Fragment>
+          ));
+        })()}
     </article>
   );
 }

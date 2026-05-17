@@ -29,6 +29,12 @@ type YamlCard = {
   cost: number;
   effect?: string;
 };
+type YamlMageSpecificCard = {
+  placement: string;
+  name: string;
+  type?: string;
+  effect: string;
+};
 type YamlMage = {
   name: string;
   job: string;
@@ -40,6 +46,7 @@ type YamlMage = {
   deck?: { unique: number; crystal: number; spark: number };
   skill?: { name: string; timing: string; charge: number; effect: string };
   rule?: string;
+  cards?: YamlMageSpecificCard[];
 };
 type YamlNemesisSpecificCard = {
   placement: string;
@@ -890,6 +897,90 @@ const knownPackages = new Set(yamlByName.keys());
         console.log(
           `[nemesis_specific_card][${pkg}/${nemesisName}] ${sheet.name} effect:`,
         );
+        console.log(`  sheet: ${JSON.stringify(sE)}`);
+        console.log(`   yaml: ${JSON.stringify(yE)}`);
+        diffs++;
+      }
+    }
+  }
+}
+
+// ============================================================
+// 7.5) player_unique_card tab vs YAML.mages[].cards
+// ============================================================
+{
+  const rows = parseCsv(
+    readFileSync(join(sheetDir, 'player_unique_card.csv'), 'utf8'),
+  );
+  const sheetByMage = new Map<string, CsvRow[]>();
+  for (const row of rows) {
+    if (!row.player) continue;
+    const arr = sheetByMage.get(row.player) ?? [];
+    arr.push(row);
+    sheetByMage.set(row.player, arr);
+  }
+
+  // 全 mage を name で索引化 (同名はないと仮定)
+  const yamlMageByName = new Map<string, { pkg: string; mage: YamlMage }>();
+  for (const { expansion } of yamlByName.values()) {
+    for (const m of expansion.mages ?? []) {
+      if (yamlMageByName.has(m.name)) {
+        console.log(`[player_unique_card] YAML 内で mage name 重複: ${m.name}`);
+        diffs++;
+        continue;
+      }
+      yamlMageByName.set(m.name, { pkg: expansion.name, mage: m });
+    }
+  }
+
+  for (const mageName of sheetByMage.keys()) {
+    if (!yamlMageByName.has(mageName)) {
+      console.log(`[player_unique_card] mage YAML 欠落: "${mageName}"`);
+      diffs++;
+    }
+  }
+
+  for (const [mageName, sheetRows] of sheetByMage.entries()) {
+    const target = yamlMageByName.get(mageName);
+    if (!target) continue;
+    const { pkg, mage } = target;
+    const yamlCards = mage.cards ?? [];
+    const yamlByCardName = new Map(yamlCards.map((c) => [c.name, c]));
+    const sheetByCardName = new Map(sheetRows.map((r) => [r.name, r]));
+
+    for (const name of sheetByCardName.keys()) {
+      if (!yamlByCardName.has(name)) {
+        console.log(`[player_unique_card][${pkg}/${mageName}] YAML 欠落: ${name}`);
+        diffs++;
+      }
+    }
+    for (const name of yamlByCardName.keys()) {
+      if (!sheetByCardName.has(name)) {
+        console.log(`[player_unique_card][${pkg}/${mageName}] シート欠落: ${name}`);
+        diffs++;
+      }
+    }
+
+    for (const sheet of sheetRows) {
+      const y = yamlByCardName.get(sheet.name);
+      if (!y) continue;
+      if (sheet.placement !== y.placement) {
+        console.log(
+          `[player_unique_card][${pkg}/${mageName}] ${sheet.name} placement: sheet="${sheet.placement}" yaml="${y.placement}"`,
+        );
+        diffs++;
+      }
+      const sType = sheet.type === '' || sheet.type === '-' ? undefined : sheet.type;
+      if (normalizeType(sType) !== normalizeType(y.type)) {
+        console.log(
+          `[player_unique_card][${pkg}/${mageName}] ${sheet.name} type: sheet="${sheet.type}" yaml="${y.type}"`,
+        );
+        diffs++;
+      }
+      const sE = normalize(sheet.effect ?? '');
+      const yE = normalize(y.effect ?? '');
+      if (sE !== yE) {
+        console.log(`[player_unique_card][${pkg}/${mageName}] ${sheet.name} effect:`);
         console.log(`  sheet: ${JSON.stringify(sE)}`);
         console.log(`   yaml: ${JSON.stringify(yE)}`);
         diffs++;

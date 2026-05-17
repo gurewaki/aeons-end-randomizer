@@ -57,6 +57,17 @@ export interface MageSkill {
   charge?: number;
 }
 
+export interface MageSpecificCard {
+  id: string;
+  mageId: string;
+  /** 自由記述ラベル (例: 「錬成」)。詳細表示で同じ placement のカードをグルーピングする */
+  placement: string;
+  name: string;
+  /** 宝石/遺物/呪文。カードでない場合は未指定 */
+  type?: CardType;
+  effect: string;
+}
+
 export interface Mage {
   id: string;
   expansionId: string;
@@ -67,7 +78,7 @@ export interface Mage {
   breaches?: MageBreaches;
   /** 固有破孔 (持っている場合) */
   uniqueBreach?: MageUniqueBreach;
-  /** 固有カード */
+  /** 固有カード (初期手札・デッキの unique カウントが指すカード) */
   uniqueCard?: MageUniqueCard;
   /** 初期手札の構成 */
   hand?: MageInitialPile;
@@ -77,6 +88,8 @@ export interface Mage {
   skill?: MageSkill;
   /** キャラクター固有ルール */
   rule?: string;
+  /** 初期手札・デッキ以外の固有カード (錬成の山 等) */
+  cards: MageSpecificCard[];
 }
 
 export interface NemesisSpecificCard {
