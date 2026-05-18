@@ -240,6 +240,15 @@ export function TurnOrderRandomizer() {
     });
   };
 
+  // 「↻ 山へ戻す」も誤タップ防止のため確認を入れる
+  const returnDiscardToDeckSafe = (cardId: string) => {
+    const ok = window.confirm(
+      'このカードを山に戻して再シャッフルします。よろしいですか？',
+    );
+    if (!ok) return;
+    returnDiscardToDeck(cardId);
+  };
+
   const deckCount = state.deck.length;
   const totalCount = useMemo(
     () => state.deck.length + state.discard.length,
@@ -414,7 +423,7 @@ export function TurnOrderRandomizer() {
                     <TurnOrderCardFace card={c} size={isLatest ? 'normal' : 'small'} />
                     <button
                       type="button"
-                      onClick={() => returnDiscardToDeck(c.id)}
+                      onClick={() => returnDiscardToDeckSafe(c.id)}
                       className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-700"
                       title="山に戻して再シャッフル"
                     >
