@@ -8,6 +8,14 @@ const PLAYER_FRAME: Record<PlayerValue, string> = {
   4: 'border-purple-400 bg-purple-500/30 text-purple-100',
 };
 
+/** ペアカードの半分用 (背景 + 文字色のみ) */
+const PLAYER_HALF: Record<PlayerValue, string> = {
+  1: 'bg-yellow-500/50 text-yellow-50',
+  2: 'bg-orange-500/50 text-orange-50',
+  3: 'bg-blue-500/50 text-blue-50',
+  4: 'bg-purple-500/50 text-purple-50',
+};
+
 function cardFace(card: TurnOrderCard): {
   frame: string;
   label: string;
@@ -36,7 +44,43 @@ function cardFace(card: TurnOrderCard): {
         label: 'W',
         sub: card.revealedAs !== undefined ? `→ P${card.revealedAs}` : 'ワイルド',
       };
+    case 'pair':
+      // ペアカードは構造が異なるので別経路で描画。ここでは使用されない。
+      return { frame: '', label: '' };
   }
+}
+
+/** ペアカードを縦半分割で描画 */
+function PairFace({
+  card,
+  size,
+}: {
+  card: TurnOrderCard;
+  size: 'normal' | 'small';
+}) {
+  const [top, bottom] = card.pairValues as [PlayerValue, PlayerValue];
+  const chosen = card.revealedAs;
+  const sizeBox =
+    size === 'small' ? 'h-20 w-14 text-xl' : 'h-32 w-24 text-4xl';
+  const dim = (v: PlayerValue) =>
+    chosen !== undefined && chosen !== v ? 'opacity-25' : '';
+  return (
+    <div
+      className={`flex flex-col overflow-hidden rounded-md border-2 border-slate-200 shadow-md ${sizeBox}`}
+    >
+      <div
+        className={`flex flex-1 items-center justify-center font-bold ${PLAYER_HALF[top]} ${dim(top)}`}
+      >
+        {top}
+      </div>
+      <div className="h-px w-full bg-slate-300/70" />
+      <div
+        className={`flex flex-1 items-center justify-center font-bold ${PLAYER_HALF[bottom]} ${dim(bottom)}`}
+      >
+        {bottom}
+      </div>
+    </div>
+  );
 }
 
 /** 共通の表サイズ・形状 */
@@ -51,6 +95,9 @@ export function TurnOrderCardFace({
   card: TurnOrderCard;
   size?: 'normal' | 'small';
 }) {
+  if (card.kind === 'pair') {
+    return <PairFace card={card} size={size} />;
+  }
   const face = cardFace(card);
   const sizeClass =
     size === 'small'

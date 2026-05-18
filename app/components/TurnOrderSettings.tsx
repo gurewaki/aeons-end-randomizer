@@ -77,6 +77,18 @@ export function TurnOrderSettingsPanel({
         />
         ネメシスカードの 2 枚目を急襲カードに置き換える
       </label>
+
+      <label className="flex items-center gap-2 text-sm text-slate-200">
+        <input
+          type="checkbox"
+          checked={settings.expeditionMode}
+          onChange={(e) =>
+            onChange({ ...settings, expeditionMode: e.target.checked })
+          }
+          className="h-4 w-4 rounded border-slate-600 bg-slate-900"
+        />
+        探索行モード
+      </label>
     </section>
   );
 }

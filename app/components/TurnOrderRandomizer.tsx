@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   buildInitialState,
   DEFAULT_SETTINGS,
+  pairKey,
   reshuffleFromDiscard,
   type PlayerValue,
   type TurnOrderCard,
@@ -19,6 +20,7 @@ import {
 import { TurnOrderPeekModal } from './TurnOrderPeekModal';
 import { TurnOrderReorderModal } from './TurnOrderReorderModal';
 import { TurnOrderWildSelectionModal } from './TurnOrderWildSelectionModal';
+import { TurnOrderPairSelectionModal } from './TurnOrderPairSelectionModal';
 import { useTurnOrderProgress } from './TurnOrderProgressContext';
 
 /** 公開アニメーションの長さ (CSS と一致)
@@ -59,6 +61,8 @@ export function TurnOrderRandomizer() {
   const [reorderOpen, setReorderOpen] = useState(false);
   /** ワイルド公開待ち: 選択完了でこのカードを捨て札に確定する */
   const [wildPending, setWildPending] = useState<TurnOrderCard | null>(null);
+  /** ペア (初回) 公開待ち: 選択完了でこのカードを捨て札に確定する */
+  const [pairPending, setPairPending] = useState<TurnOrderCard | null>(null);
 
   const playerCandidates: PlayerValue[] = settings.playerValues;
 
@@ -88,6 +92,20 @@ export function TurnOrderRandomizer() {
       if (revealing.kind === 'wild' && revealIntent.kind === 'discard') {
         // ワイルド公開 → プレイヤー選択 Modal を出して保留
         setWildPending(revealing);
+      } else if (
+        revealing.kind === 'pair' &&
+        revealIntent.kind === 'discard'
+      ) {
+        // ペア公開: 既にこのペアが使われているなら自動割り振り、そうでなければ Modal
+        const key = pairKey(revealing.pairValues!);
+        const used = state.pairChoices[key];
+        if (used !== undefined) {
+          const [a, b] = revealing.pairValues!;
+          const auto = used === a ? b : a;
+          applyReveal(revealing, revealIntent, auto);
+        } else {
+          setPairPending(revealing);
+        }
       } else {
         applyReveal(revealing, revealIntent);
       }
@@ -96,9 +114,10 @@ export function TurnOrderRandomizer() {
       setRevealIntent(null);
     }, REVEAL_MS);
     return () => window.clearTimeout(timer);
-  }, [mode, revealing, revealIntent]);
+  }, [mode, revealing, revealIntent, state.pairChoices]);
 
-  /** 実際の deck/discard 操作。revealedAs はワイルド時に上書き */
+  /** 実際の deck/discard 操作。revealedAs はワイルド/ペア時に上書き。
+   *  ペアカードかつ初回確定なら pairChoices に記録する。 */
   const applyReveal = (
     card: TurnOrderCard,
     intent: RevealIntent,
@@ -107,8 +126,25 @@ export function TurnOrderRandomizer() {
     setState((prev) => {
       const deckRest = prev.deck.slice(1);
       const annotated = revealedAs ? { ...card, revealedAs } : card;
+      const nextPairChoices = { ...prev.pairChoices };
+      if (
+        intent.kind === 'discard' &&
+        card.kind === 'pair' &&
+        revealedAs !== undefined
+      ) {
+        const key = pairKey(card.pairValues!);
+        // 初回 (まだ未記録) のときだけ choice を入れる
+        if (nextPairChoices[key] === undefined) {
+          nextPairChoices[key] = revealedAs;
+        }
+      }
       if (intent.kind === 'discard') {
-        return { ...prev, deck: deckRest, discard: [annotated, ...prev.discard] };
+        return {
+          ...prev,
+          deck: deckRest,
+          discard: [annotated, ...prev.discard],
+          pairChoices: nextPairChoices,
+        };
       }
       if (intent.kind === 'returnTop') {
         return { ...prev, deck: [card, ...deckRest] };
@@ -125,15 +161,22 @@ export function TurnOrderRandomizer() {
     setWildPending(null);
   };
 
+  // ペア初回の選択結果が確定したら apply
+  const handlePairSelect = (v: PlayerValue) => {
+    if (!pairPending) return;
+    applyReveal(pairPending, { kind: 'discard' }, v);
+    setPairPending(null);
+  };
+
   // 「公開」ボタン: 即・捨て札
   const handleReveal = () => {
-    if (mode !== 'idle' || wildPending) return;
+    if (mode !== 'idle' || wildPending || pairPending) return;
     startReveal({ kind: 'discard' });
   };
 
   // 「見る」ボタン: peek modal (アニメなし)
   const handlePeek = () => {
-    if (mode !== 'idle' || wildPending) return;
+    if (mode !== 'idle' || wildPending || pairPending) return;
     setState((prev) => {
       const ready = ensureNonEmpty(prev);
       setPeekCard(ready.deck[0] ?? null);
@@ -147,6 +190,15 @@ export function TurnOrderRandomizer() {
     setPeekOpen(false);
     if (peekCard.kind === 'wild') {
       setWildPending(peekCard);
+    } else if (peekCard.kind === 'pair') {
+      const key = pairKey(peekCard.pairValues!);
+      const used = state.pairChoices[key];
+      if (used !== undefined) {
+        const [a, b] = peekCard.pairValues!;
+        applyReveal(peekCard, { kind: 'discard' }, used === a ? b : a);
+      } else {
+        setPairPending(peekCard);
+      }
     } else {
       applyReveal(peekCard, { kind: 'discard' });
     }
@@ -173,7 +225,7 @@ export function TurnOrderRandomizer() {
     setState(buildInitialState(settings));
   };
 
-  // 捨て札の特定カードを山に戻して再シャッフル
+  // 捨て札の特定カードを山に戻して再シャッフル (シャッフルなのでペアの追跡もリセット)
   const returnDiscardToDeck = (cardId: string) => {
     setState((prev) => {
       const found = prev.discard.find((c) => c.id === cardId);
@@ -183,6 +235,7 @@ export function TurnOrderRandomizer() {
         ...prev,
         discard: prev.discard.filter((c) => c.id !== cardId),
         deck: shuffle([...prev.deck, restored]),
+        pairChoices: {},
       };
     });
   };
@@ -193,11 +246,15 @@ export function TurnOrderRandomizer() {
     [state],
   );
 
-  const busy = mode !== 'idle' || wildPending !== null;
+  const busy =
+    mode !== 'idle' || wildPending !== null || pairPending !== null;
 
-  // 公開を 1 度でも開始した = 捨て札がある or 公開中 or ワイルド選択待ち
+  // 公開を 1 度でも開始した = 捨て札がある or 公開中 or 選択待ち
   const inProgress =
-    state.discard.length > 0 || mode === 'revealing' || wildPending !== null;
+    state.discard.length > 0 ||
+    mode === 'revealing' ||
+    wildPending !== null ||
+    pairPending !== null;
   useEffect(() => {
     setInProgress(inProgress);
     return () => setInProgress(false);
@@ -389,6 +446,13 @@ export function TurnOrderRandomizer() {
         open={wildPending !== null}
         candidates={playerCandidates}
         onSelect={handleWildSelect}
+      />
+      <TurnOrderPairSelectionModal
+        open={pairPending !== null}
+        values={
+          pairPending?.pairValues ?? ([1, 2] as [PlayerValue, PlayerValue])
+        }
+        onSelect={handlePairSelect}
       />
     </main>
   );
