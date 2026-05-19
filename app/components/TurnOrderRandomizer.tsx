@@ -24,10 +24,10 @@ import { TurnOrderPairSelectionModal } from './TurnOrderPairSelectionModal';
 import { useTurnOrderProgress } from './TurnOrderProgressContext';
 
 /** 公開アニメーションの長さ (CSS と一致)
- *  - 0-1000ms:  reveal-suspense (カード裏が震える)
- *  - 1000-1500ms: reveal-face (カード表ポップ)
+ *  - 0-1500ms:  reveal-suspense (カード裏が震える)
+ *  - 1500-2250ms: reveal-face (カード表ポップ)
  */
-const REVEAL_MS = 1500;
+const REVEAL_MS = 2250;
 
 type Mode = 'idle' | 'revealing';
 

@@ -18,7 +18,7 @@ body {
 /*   Phase 2 (1000-1500ms): カード表がポップアップ             */
 /* ----------------------------------------------------------- */
 .reveal-suspense {
-  animation: reveal-suspense 1000ms ease-in forwards;
+  animation: reveal-suspense 1500ms ease-in forwards;
   transform-origin: center;
 }
 @keyframes reveal-suspense {
@@ -52,7 +52,7 @@ body {
 
 .reveal-face {
   opacity: 0;
-  animation: reveal-face 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 1000ms forwards;
+  animation: reveal-face 750ms cubic-bezier(0.34, 1.56, 0.64, 1) 1500ms forwards;
   transform-origin: center;
 }
 @keyframes reveal-face {
