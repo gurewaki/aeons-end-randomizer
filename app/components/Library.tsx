@@ -35,7 +35,7 @@ export function Library() {
       </header>
 
       <section className="mb-4 rounded-lg border border-slate-700 bg-slate-800/50 p-1">
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           {TABS.map(({ key, label }) => {
             const active = tab === key;
             return (
@@ -44,7 +44,7 @@ export function Library() {
                 type="button"
                 onClick={() => setTab(key)}
                 className={
-                  'flex-1 rounded px-4 py-2 text-sm font-medium transition ' +
+                  'flex-1 whitespace-nowrap rounded px-4 py-2 text-sm font-medium transition ' +
                   (active
                     ? 'bg-emerald-500/20 text-emerald-200'
                     : 'text-slate-300 hover:bg-slate-700/50 hover:text-slate-100')
