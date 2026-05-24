@@ -3,7 +3,13 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 // 統合スプレッドシート (9 タブ構成)
-const SHEET_ID = '1XINA8TPodoFbw5LQv8dlbjL4JfKMCqiY0dkvkv5YrzI';
+// SHEET_ID は .env.local から注入される (package.json の fetch:sheet が --env-file で読み込む)
+const SHEET_ID = process.env.SHEET_ID;
+if (!SHEET_ID) {
+  throw new Error(
+    'SHEET_ID が未設定です。.env.local に SHEET_ID=<spreadsheet id> を記入してください (.env.example 参照)',
+  );
+}
 
 const TABS = [
   'season',
