@@ -326,40 +326,60 @@ export function TurnOrderRandomizer() {
           </h2>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-4 py-2 sm:flex-row">
-          {/* h-44 で revealing 時の最大スケール (1.4) でもクリップしない高さを確保 */}
-          <div className="flex h-44 items-center justify-center">
-            {revealing ? (
-              <div key={revealing.id} className="relative h-32 w-24">
-                {/* Phase 1: カード裏が震える */}
-                <div className="reveal-suspense absolute inset-0 flex items-center justify-center">
-                  <TurnOrderCardBack />
+        {/* カード表示エリア全体が「公開」ボタン
+            山札が空でも捨て札にカードがあれば自動でシャッフルしてから公開する */}
+        {(() => {
+          const canTap = !busy && (deckCount > 0 || state.discard.length > 0);
+          const showBack = deckCount > 0 || state.discard.length > 0;
+          return (
+            <div className="flex flex-col items-center justify-center gap-4 py-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleReveal}
+                disabled={!canTap}
+                aria-label="一番上のカードを公開"
+                className={`flex flex-col items-center gap-2 rounded-md p-2 transition focus:outline-none focus:ring-2 focus:ring-emerald-400/60 ${
+                  canTap
+                    ? 'cursor-pointer hover:-translate-y-1 active:scale-95'
+                    : 'cursor-not-allowed opacity-60'
+                }`}
+              >
+                {/* h-44 で revealing 時の最大スケール (1.4) でもクリップしない高さを確保 */}
+                <div className="flex h-44 items-center justify-center">
+                  {revealing ? (
+                    <div key={revealing.id} className="relative h-32 w-24">
+                      {/* Phase 1: カード裏が震える */}
+                      <div className="reveal-suspense absolute inset-0 flex items-center justify-center">
+                        <TurnOrderCardBack />
+                      </div>
+                      {/* Phase 2: カード表がポップ */}
+                      <div className="reveal-face absolute inset-0 flex items-center justify-center">
+                        <TurnOrderCardFace card={revealing} />
+                      </div>
+                    </div>
+                  ) : showBack ? (
+                    <TurnOrderCardBack />
+                  ) : (
+                    <div className="flex h-32 w-24 items-center justify-center rounded-md border-2 border-dashed border-slate-700 text-xs text-slate-500">
+                      空
+                    </div>
+                  )}
                 </div>
-                {/* Phase 2: カード表がポップ */}
-                <div className="reveal-face absolute inset-0 flex items-center justify-center">
-                  <TurnOrderCardFace card={revealing} />
-                </div>
-              </div>
-            ) : deckCount > 0 ? (
-              <TurnOrderCardBack />
-            ) : (
-              <div className="flex h-32 w-24 items-center justify-center rounded-md border-2 border-dashed border-slate-700 text-xs text-slate-500">
-                空
-              </div>
-            )}
-          </div>
-        </div>
+                {/* レイアウトジャンプ防止のため常に同じ高さを確保し、内容のみ切り替える */}
+                <span
+                  className={`text-xs text-slate-400 ${
+                    revealing || !canTap ? 'invisible' : ''
+                  }`}
+                >
+                  タップして公開
+                </span>
+              </button>
+            </div>
+          );
+        })()}
 
-        {/* ツールバー */}
+        {/* ツールバー (公開は上のカード自身がボタンを兼ねる) */}
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <button
-            type="button"
-            onClick={handleReveal}
-            disabled={busy}
-            className="rounded border border-emerald-500/60 bg-emerald-500/30 px-4 py-1.5 text-sm font-medium text-emerald-100 hover:bg-emerald-500/40 disabled:opacity-50"
-          >
-            公開
-          </button>
           <button
             type="button"
             onClick={handlePeekSafe}
