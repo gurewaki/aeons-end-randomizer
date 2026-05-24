@@ -21,6 +21,7 @@ import { TurnOrderPeekModal } from './TurnOrderPeekModal';
 import { TurnOrderReorderModal } from './TurnOrderReorderModal';
 import { TurnOrderWildSelectionModal } from './TurnOrderWildSelectionModal';
 import { TurnOrderPairSelectionModal } from './TurnOrderPairSelectionModal';
+import { TurnOrderReturnConfirmModal } from './TurnOrderReturnConfirmModal';
 import { useTurnOrderProgress } from './TurnOrderProgressContext';
 
 /** 公開アニメーションの長さ (CSS と一致)
@@ -63,6 +64,9 @@ export function TurnOrderRandomizer() {
   const [wildPending, setWildPending] = useState<TurnOrderCard | null>(null);
   /** ペア (初回) 公開待ち: 選択完了でこのカードを捨て札に確定する */
   const [pairPending, setPairPending] = useState<TurnOrderCard | null>(null);
+  /** 「山へ戻す」確認待ち: 確定で対象カードを山に戻す */
+  const [returnPending, setReturnPending] =
+    useState<TurnOrderCard | null>(null);
 
   const playerCandidates: PlayerValue[] = settings.playerValues;
 
@@ -240,13 +244,16 @@ export function TurnOrderRandomizer() {
     });
   };
 
-  // 「↻ 山へ戻す」も誤タップ防止のため確認を入れる
-  const returnDiscardToDeckSafe = (cardId: string) => {
-    const ok = window.confirm(
-      'このカードを山に戻して再シャッフルします。よろしいですか？',
-    );
-    if (!ok) return;
-    returnDiscardToDeck(cardId);
+  // 「↻ 山へ戻す」: 対象カードを表示する Modal で確認
+  const requestReturnDiscard = (cardId: string) => {
+    const card = state.discard.find((c) => c.id === cardId);
+    if (!card) return;
+    setReturnPending(card);
+  };
+  const confirmReturnDiscard = () => {
+    if (!returnPending) return;
+    returnDiscardToDeck(returnPending.id);
+    setReturnPending(null);
   };
 
   const deckCount = state.deck.length;
@@ -443,7 +450,7 @@ export function TurnOrderRandomizer() {
                     <TurnOrderCardFace card={c} size={isLatest ? 'normal' : 'small'} />
                     <button
                       type="button"
-                      onClick={() => returnDiscardToDeckSafe(c.id)}
+                      onClick={() => requestReturnDiscard(c.id)}
                       className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-700"
                       title="山に戻して再シャッフル"
                     >
@@ -482,6 +489,12 @@ export function TurnOrderRandomizer() {
           pairPending?.pairValues ?? ([1, 2] as [PlayerValue, PlayerValue])
         }
         onSelect={handlePairSelect}
+      />
+      <TurnOrderReturnConfirmModal
+        open={returnPending !== null}
+        card={returnPending}
+        onCancel={() => setReturnPending(null)}
+        onConfirm={confirmReturnDiscard}
       />
     </main>
   );
