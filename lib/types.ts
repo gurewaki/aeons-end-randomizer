@@ -7,8 +7,11 @@ export const CARD_TYPE_LABEL: Record<CardType, string> = {
 };
 
 interface CardBase {
+  /** 内部ユニーク ID (`${expansionId}:card:${name}`) */
   id: string;
   expansionId: string;
+  /** パッケージ内のカード番号 (シートの `id` 列由来)。共有 URL の短縮に使う */
+  no: number;
   name: string;
   cost: number;
   effect?: string;
@@ -180,6 +183,8 @@ export type PackageType = 'main' | 'sub';
 export interface Expansion {
   id: string;
   name: string;
+  /** 英語名 (空白を除いたものを URL slug として使う) */
+  englishName: string;
   badge?: string;
   /** 統合スプレッドシートの season タブから派生。プロモなど未割当は undefined */
   season?: number;

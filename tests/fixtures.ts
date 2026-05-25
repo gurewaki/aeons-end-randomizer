@@ -1,8 +1,13 @@
 import type { Card, Gem, Relic, Spell } from '../lib/types';
 
+// fixture 用なので no は採番不問 (テストは no を参照しない)
+let __noCounter = 0;
+const nextNo = () => ++__noCounter;
+
 const gem = (id: string, name: string, cost: number): Gem => ({
   id: `fx:${id}`,
   expansionId: 'fx',
+  no: nextNo(),
   name,
   type: 'Gem',
   cost,
@@ -11,6 +16,7 @@ const gem = (id: string, name: string, cost: number): Gem => ({
 const relic = (id: string, name: string, cost: number): Relic => ({
   id: `fx:${id}`,
   expansionId: 'fx',
+  no: nextNo(),
   name,
   type: 'Relic',
   cost,
@@ -19,6 +25,7 @@ const relic = (id: string, name: string, cost: number): Relic => ({
 const spell = (id: string, name: string, cost: number): Spell => ({
   id: `fx:${id}`,
   expansionId: 'fx',
+  no: nextNo(),
   name,
   type: 'Spell',
   cost,

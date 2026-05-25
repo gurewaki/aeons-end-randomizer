@@ -2,27 +2,28 @@
 # シーズン (= グループ) 単位で theme を定義し、配下に package を列挙する。
 # プロモなどシーズン未割当のグループは season を省略する (theme と packages のみ)。
 # badge はパッケージごとに表示用の短い識別子。
+# englishName は共有 URL の slug として使用 (空白除去して使う)。
 - season: 1
   theme: '#D0C277'
   packages:
-    - { name: イーオンズ・エンド, type: main, badge: 基本 }
-    - { name: イーオンズ・エンド：深層, type: sub, badge: 深層 }
-    - { name: イーオンズ・エンド：名無きもの, type: sub, badge: 名無きもの }
+    - { name: イーオンズ・エンド, type: main, badge: 基本, englishName: Core Box }
+    - { name: イーオンズ・エンド：深層, type: sub, badge: 深層, englishName: The Depth }
+    - { name: イーオンズ・エンド：名無きもの, type: sub, badge: 名無きもの, englishName: The Nameless }
 - season: 2
   theme: '#BEBEBE'
   packages:
-    - { name: イーオンズ・エンド：終わりなき戦い, type: main, badge: 終わりなき戦い }
-    - { name: イーオンズ・エンド：虚空, type: sub, badge: 虚空 }
-    - { name: イーオンズ・エンド：外より来たりし闇, type: sub, badge: 外より来たりし闇 }
+    - { name: イーオンズ・エンド：終わりなき戦い, type: main, badge: 終わりなき戦い, englishName: War Eternal }
+    - { name: イーオンズ・エンド：虚空, type: sub, badge: 虚空, englishName: The Void }
+    - { name: イーオンズ・エンド：外より来たりし闇, type: sub, badge: 外より来たりし闇, englishName: The Outer Dark }
 - season: 3
   theme: '#7DCCF3'
   packages:
-    - { name: イーオンズ・エンド：レガシー, type: main, badge: レガシー }
-    - { name: イーオンズ・エンド：埋もれた秘密, type: sub, badge: 埋もれた秘密 }
+    - { name: イーオンズ・エンド：レガシー, type: main, badge: レガシー, englishName: Legacy }
+    - { name: イーオンズ・エンド：埋もれた秘密, type: sub, badge: 埋もれた秘密, englishName: Buried Secrets }
 - season: 4
   theme: '#B779F4'
   packages:
-    - { name: イーオンズ・エンド：新たな時代, type: main, badge: 新たな時代 }
+    - { name: イーオンズ・エンド：新たな時代, type: main, badge: 新たな時代, englishName: The New Age }
 - theme: '#F47A3B'
   packages:
-    - { name: プロモーション, badge: プロモ }
+    - { name: プロモーション, badge: プロモ, englishName: Promotion }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { SupplyRandomizer } from './components/SupplyRandomizer';
 
 export const metadata: Metadata = {
@@ -6,5 +7,11 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <SupplyRandomizer />;
+  // SupplyRandomizer は内部で useSearchParams を使っているため
+  // 静的エクスポート時の prerender を回避するため Suspense でラップする
+  return (
+    <Suspense>
+      <SupplyRandomizer />
+    </Suspense>
+  );
 }

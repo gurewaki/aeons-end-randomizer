@@ -14,6 +14,7 @@ type SeasonInfo = {
   type?: 'main' | 'sub';
   theme?: string;
   badge?: string;
+  englishName?: string;
 };
 
 /**
@@ -72,10 +73,16 @@ function loadSeasonsByPackage(): Map<string, SeasonInfo> {
         );
       }
       const badge = pp.badge as string | undefined;
+      if (pp.englishName !== undefined && typeof pp.englishName !== 'string') {
+        throw new Error(
+          `${SEASONS_FILE}: [${gIdx}].packages[${pIdx}].englishName は string か未指定`,
+        );
+      }
+      const englishName = pp.englishName as string | undefined;
       if (map.has(pp.name)) {
         throw new Error(`${SEASONS_FILE}: package "${pp.name}" が重複`);
       }
-      map.set(pp.name, { season, type, theme, badge });
+      map.set(pp.name, { season, type, theme, badge, englishName });
     });
   });
   return map;
@@ -103,6 +110,8 @@ function normalizeType(raw: unknown, ctx: string): CardTypeEn {
 }
 
 type RawCard = {
+  /** パッケージ内のカード番号 (シートの id 列由来) */
+  no: number;
   name: string;
   type: CardTypeEn;
   cost: number;
@@ -272,11 +281,15 @@ function validateExpansion(raw: unknown, file: string): RawExpansion {
     if (typeof card.cost !== 'number' || !Number.isFinite(card.cost)) {
       throw new Error(`${file}: cards[${idx}].cost (number)`);
     }
+    if (typeof card.id !== 'number' || !Number.isFinite(card.id)) {
+      throw new Error(`${file}: cards[${idx}].id (number) が必要 — シートの id 列由来`);
+    }
     if (seenNames.has(card.name)) {
       throw new Error(`${file}: 拡張内で card name が重複: ${card.name}`);
     }
     seenNames.add(card.name);
     return {
+      no: card.id,
       name: card.name,
       type: cardType,
       cost: card.cost,
@@ -613,16 +626,21 @@ function main() {
 
   const data = expansions.map((e) => {
     const si = seasonsByPackage.get(e.name);
+    if (!si?.englishName) {
+      throw new Error(`${SEASONS_FILE}: ${e.name} に englishName が未設定`);
+    }
     return {
     id: e.id,
     name: e.name,
-    badge: si?.badge,
-    season: si?.season,
-    type: si?.type,
-    theme: si?.theme,
+    englishName: si.englishName,
+    badge: si.badge,
+    season: si.season,
+    type: si.type,
+    theme: si.theme,
     cards: e.cards.map((c) => ({
       id: `${e.id}:card:${c.name}`,
       expansionId: e.id,
+      no: c.no,
       name: c.name,
       type: c.type,
       cost: c.cost,

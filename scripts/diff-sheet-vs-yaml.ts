@@ -24,6 +24,7 @@ function normalizeType(raw: string | undefined): string {
 }
 
 type YamlCard = {
+  id?: number;
   name: string;
   type: string;
   cost: number;
@@ -194,6 +195,7 @@ type SeasonInfo = {
   type?: 'main' | 'sub';
   theme?: string;
   badge?: string;
+  englishName?: string;
 };
 
 function loadSeasonsYaml(): Map<string, SeasonInfo> {
@@ -201,7 +203,12 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
   const raw = yaml.load(text) as {
     season?: number;
     theme?: string;
-    packages: { name: string; type?: 'main' | 'sub'; badge?: string }[];
+    packages: {
+      name: string;
+      type?: 'main' | 'sub';
+      badge?: string;
+      englishName?: string;
+    }[];
   }[];
   const map = new Map<string, SeasonInfo>();
   for (const group of raw) {
@@ -211,6 +218,7 @@ function loadSeasonsYaml(): Map<string, SeasonInfo> {
         type: p.type,
         theme: group.theme,
         badge: p.badge,
+        englishName: p.englishName,
       });
     }
   }
@@ -241,7 +249,13 @@ const knownPackages = new Set(yamlByName.keys());
   const seasonRows = parseCsv(readFileSync(join(sheetDir, 'season.csv'), 'utf8'));
   const sheetMap = new Map<
     string,
-    { season?: number; type?: string; theme?: string; badge?: string }
+    {
+      season?: number;
+      type?: string;
+      theme?: string;
+      badge?: string;
+      englishName?: string;
+    }
   >();
   for (const row of seasonRows) {
     const pkg = row.package;
@@ -249,9 +263,11 @@ const knownPackages = new Set(yamlByName.keys());
     const s = row.season === '' ? undefined : Number(row.season);
     const theme = row.theme && row.theme !== '' ? row.theme : undefined;
     const badge = row.badge && row.badge !== '' ? row.badge : undefined;
-    sheetMap.set(pkg, { season: s, type: row.type, theme, badge });
+    const englishName =
+      row.name && row.name !== '' ? row.name : undefined;
+    sheetMap.set(pkg, { season: s, type: row.type, theme, badge, englishName });
   }
-  for (const [pkg, { season, type, theme, badge }] of sheetMap.entries()) {
+  for (const [pkg, { season, type, theme, badge, englishName }] of sheetMap.entries()) {
     const y = seasonsYaml.get(pkg);
     if (!y) {
       console.log(`[season] YAML 欠落: package="${pkg}" season=${season} type=${type}`);
@@ -278,6 +294,12 @@ const knownPackages = new Set(yamlByName.keys());
     }
     if ((y.badge ?? null) !== (badge ?? null)) {
       console.log(`[season] ${pkg}: badge 差分 sheet=${badge} yaml=${y.badge}`);
+      diffs++;
+    }
+    if ((y.englishName ?? null) !== (englishName ?? null)) {
+      console.log(
+        `[season] ${pkg}: englishName 差分 sheet=${englishName} yaml=${y.englishName}`,
+      );
       diffs++;
     }
   }
@@ -343,6 +365,12 @@ const knownPackages = new Set(yamlByName.keys());
     for (const sheet of sheetRows) {
       const y = cardsByCardName.get(sheet.name);
       if (!y) continue;
+      if (Number(sheet.id) !== y.id) {
+        console.log(
+          `[card][${pkg}] ${sheet.name} id: sheet="${sheet.id}" yaml="${y.id}"`,
+        );
+        diffs++;
+      }
       if (normalizeType(sheet.type) !== normalizeType(y.type)) {
         console.log(`[card][${pkg}] ${sheet.name} type: sheet="${sheet.type}" yaml="${y.type}"`);
         diffs++;
