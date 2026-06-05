@@ -11,12 +11,14 @@ import type {
   Spell,
 } from '../../lib/types';
 import { generateMarket } from '../../lib/randomizer/generateMarket';
+import { QrCode } from 'lucide-react';
 import { ExpansionSelector } from './ExpansionSelector';
 import { SetupSelector } from './SetupSelector';
 import { MustUseCardSelector } from './MustUseCardSelector';
 import { GenerateButton } from './GenerateButton';
 import { MarketDisplay } from './MarketDisplay';
 import { ErrorBanner } from './ErrorBanner';
+import { Modal } from './Modal';
 import { SupplyShareQR } from './SupplyShareQR';
 
 const SHARE_PARAM_SETUP = 's';
@@ -77,6 +79,7 @@ export function SupplyRandomizer() {
   const [error, setError] = useState<string | null>(null);
   /** 共有 URL から開いた状態 (受け手モード) */
   const [isShared, setIsShared] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const allCardsById = useMemo(() => {
     const m = new Map<string, Card>();
@@ -238,8 +241,35 @@ export function SupplyRandomizer() {
 
       <div className="mt-10 space-y-6">
         <MarketDisplay market={market} mustUseIds={marketMustUseIds} />
-        {shareUrl && <SupplyShareQR url={shareUrl} />}
+        {/* 共有ボタンは自分のセッションで生成した結果のみ表示。
+            共有 URL から開いた状態 (isShared) では非表示 */}
+        {market && !isShared && shareUrl && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShareModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded border border-emerald-500/60 bg-emerald-500/30 px-4 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-500/40"
+            >
+              <QrCode className="h-4 w-4" aria-hidden="true" />
+              このサプライを共有
+            </button>
+          </div>
+        )}
       </div>
+
+      <Modal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        labelledBy="share-modal-title"
+      >
+        {shareUrl && (
+          <SupplyShareQR
+            url={shareUrl}
+            titleId="share-modal-title"
+            onClose={() => setShareModalOpen(false)}
+          />
+        )}
+      </Modal>
     </main>
   );
 }

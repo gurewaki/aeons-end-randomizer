@@ -3,29 +3,51 @@
 import { QRCodeSVG } from 'qrcode.react';
 
 /**
- * 生成されたサプライ構成を URL + QR コードで共有するためのパネル。
- * 親側で組み立てた共有 URL を受け取る。
+ * Modal 内で使う想定の QR コード + URL 表示。
+ * 共有 URL を受け取り、QR と URL のテキストを並べて表示する。
  */
-export function SupplyShareQR({ url }: { url: string }) {
+export function SupplyShareQR({
+  url,
+  titleId,
+  onClose,
+}: {
+  url: string;
+  titleId?: string;
+  onClose?: () => void;
+}) {
   return (
-    <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-      <h3 className="mb-3 text-lg font-semibold text-slate-100">
-        このサプライを共有
-        <span className="ml-2 text-xs font-normal text-slate-400">
-          QR コードまたは URL を相手に渡してください
-        </span>
-      </h3>
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id={titleId} className="text-xl font-bold text-slate-50">
+            このサプライを共有
+          </h2>
+          <p className="mt-1 text-xs text-slate-400">
+            QR コードまたは URL を相手に渡してください
+          </p>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="閉じる"
+            className="rounded border border-slate-600 bg-slate-800/70 px-2 py-0.5 text-base leading-none text-slate-200 hover:bg-slate-700/70"
+          >
+            ×
+          </button>
+        )}
+      </div>
+      <div className="flex flex-col items-center gap-4">
         <div className="rounded-md bg-white p-3 shadow-md">
-          <QRCodeSVG value={url} size={160} level="M" />
+          <QRCodeSVG value={url} size={200} level="M" />
         </div>
         <a
           href={url}
-          className="break-all text-xs text-slate-300 underline-offset-2 hover:text-slate-100 hover:underline"
+          className="block max-w-full break-all text-center text-xs text-slate-300 underline-offset-2 hover:text-slate-100 hover:underline"
         >
           {url}
         </a>
       </div>
-    </section>
+    </div>
   );
 }
