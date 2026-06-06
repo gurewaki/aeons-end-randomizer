@@ -144,15 +144,18 @@ export function SupplyRandomizer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 自分のセッションで market が更新されたとき、URL も同期する
+  // 自分のセッションで market が更新されたとき、URL も同期する。
+  // router.replace は scroll-to-top + 再レンダーを誘発するため、
+  // 見た目だけのアドレスバー書き換えに window.history.replaceState を使う。
   const updateShareUrl = (m: MarketSupply, setupName: string) => {
+    if (typeof window === 'undefined') return;
     const params = new URLSearchParams();
     params.set(SHARE_PARAM_SETUP, setupName);
     params.set(
       SHARE_PARAM_CARDS,
       serializeMarketTokens(m, expansionSlugById).join(','),
     );
-    router.replace(`${pathname}?${params.toString()}`);
+    window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
   };
 
   const handleGenerate = () => {
