@@ -4,11 +4,12 @@ import type {
   Relic,
   Spell,
   CardType,
+  GeneratedSupply,
   MarketSupply,
   RandomizerOptions,
   SetupSlot,
+  SupplyPlacement,
 } from '../types';
-import { MARKET_COMPOSITION } from '../types';
 import { shuffle } from './shuffle';
 import {
   TooManyMustUseError,
@@ -38,6 +39,19 @@ function emptyTypeCounts(): Record<CardType, number> {
   return { Gem: 0, Relic: 0, Spell: 0 };
 }
 
+function buildMarketFromPlacements(placements: SupplyPlacement[]): MarketSupply {
+  const result: MarketSupply = { gems: [], relics: [], spells: [] };
+  for (const { card } of placements) {
+    if (card.type === 'Gem') result.gems.push(card as Gem);
+    else if (card.type === 'Relic') result.relics.push(card as Relic);
+    else result.spells.push(card as Spell);
+  }
+  result.gems = shuffle(result.gems);
+  result.relics = shuffle(result.relics);
+  result.spells = shuffle(result.spells);
+  return result;
+}
+
 /**
  * セットアップに沿ってサプライを生成する。
  *
@@ -50,10 +64,9 @@ function emptyTypeCounts(): Record<CardType, number> {
 export function generateMarket(
   pool: Card[],
   options: RandomizerOptions,
-): MarketSupply {
+): GeneratedSupply {
   const { setup, mustUseCardIds } = options;
 
-  // タイプ別の必ず使用枚数 vs setup スロット数を検証
   const setupTypeCounts = emptyTypeCounts();
   for (const slot of setup.slots) setupTypeCounts[slot.type]++;
 
@@ -67,7 +80,6 @@ export function generateMarket(
     }
   }
 
-  // 必ず使用カードを setup スロットに配置 (most-constrained-first)
   const placed = new Map<number, Card>();
   const sortedMustUse = [...mustUse].sort((a, b) => {
     const aFit = setup.slots.filter((s) => fitsSlot(a, s)).length;
@@ -89,7 +101,6 @@ export function generateMarket(
     placed.set(placedAt, card);
   }
 
-  // 残スロットを fillable から充足
   const usedNames = new Set(mustUse.map((c) => c.name));
   const fillable = dedupedPool.filter(
     (c) => !mustUseCardIds.has(c.id) && !usedNames.has(c.name),
@@ -111,28 +122,86 @@ export function generateMarket(
     usedNames.add(picked.name);
   }
 
-  // タイプ別に集約 (各タイプ内は表示順をシャッフル)
-  const result: MarketSupply = { gems: [], relics: [], spells: [] };
-  for (let i = 0; i < setup.slots.length; i++) {
-    const card = placed.get(i)!;
-    if (card.type === 'Gem') result.gems.push(card as Gem);
-    else if (card.type === 'Relic') result.relics.push(card as Relic);
-    else result.spells.push(card as Spell);
-  }
-  result.gems = shuffle(result.gems);
-  result.relics = shuffle(result.relics);
-  result.spells = shuffle(result.spells);
+  const placements: SupplyPlacement[] = setup.slots.map((slot, i) => ({
+    slot,
+    card: placed.get(i)!,
+  }));
+  const market = buildMarketFromPlacements(placements);
 
-  // 結果のタイプ別枚数が setup のスロット構成と一致するかをサニティチェック
   if (
-    result.gems.length !== setupTypeCounts.Gem ||
-    result.relics.length !== setupTypeCounts.Relic ||
-    result.spells.length !== setupTypeCounts.Spell
+    market.gems.length !== setupTypeCounts.Gem ||
+    market.relics.length !== setupTypeCounts.Relic ||
+    market.spells.length !== setupTypeCounts.Spell
   ) {
     throw new Error(
-      `setup "${setup.name}" の生成結果がスロット構成と一致しません (Gem ${result.gems.length}/${setupTypeCounts.Gem}, Relic ${result.relics.length}/${setupTypeCounts.Relic}, Spell ${result.spells.length}/${setupTypeCounts.Spell})`,
+      `setup "${setup.name}" の生成結果がスロット構成と一致しません (Gem ${market.gems.length}/${setupTypeCounts.Gem}, Relic ${market.relics.length}/${setupTypeCounts.Relic}, Spell ${market.spells.length}/${setupTypeCounts.Spell})`,
     );
   }
 
-  return result;
+  return {
+    market,
+    placements,
+    poolSnapshot: dedupedPool,
+    mustUseIds: new Set(mustUseCardIds),
+    setup,
+  };
+}
+
+function rerollCandidates(
+  poolSnapshot: readonly Card[],
+  slotIndex: number,
+  placements: SupplyPlacement[],
+  mustUseIds: ReadonlySet<string>,
+): Card[] {
+  const slot = placements[slotIndex].slot;
+  const usedIds = new Set(placements.map((p) => p.card.id));
+  const usedNames = new Set(placements.map((p) => p.card.name));
+  return poolSnapshot.filter(
+    (c) =>
+      fitsSlot(c, slot) &&
+      !usedIds.has(c.id) &&
+      !usedNames.has(c.name) &&
+      !mustUseIds.has(c.id),
+  );
+}
+
+/**
+ * 単一スロットを再抽選する。
+ * 候補は: poolSnapshot のうち
+ *  - そのスロット制約に合致
+ *  - 現在の他 8 枚 + 自身 (= 全 placements) の id・name と重複しない
+ *  - 必ず使用カードでない
+ * 候補 0 件で SlotCannotBeFilledError。
+ */
+export function rerollSlot(
+  poolSnapshot: readonly Card[],
+  slotIndex: number,
+  placements: SupplyPlacement[],
+  mustUseIds: ReadonlySet<string>,
+): Card {
+  if (slotIndex < 0 || slotIndex >= placements.length) {
+    throw new RangeError(`slotIndex ${slotIndex} は範囲外です`);
+  }
+  const candidates = rerollCandidates(
+    poolSnapshot,
+    slotIndex,
+    placements,
+    mustUseIds,
+  );
+  if (candidates.length === 0) {
+    throw new SlotCannotBeFilledError(placements[slotIndex].slot, slotIndex);
+  }
+  return shuffle(candidates)[0];
+}
+
+/** 再抽選可能か (候補が 1 枚以上あるか) を事前判定する */
+export function canRerollSlot(
+  poolSnapshot: readonly Card[],
+  slotIndex: number,
+  placements: SupplyPlacement[],
+  mustUseIds: ReadonlySet<string>,
+): boolean {
+  return (
+    rerollCandidates(poolSnapshot, slotIndex, placements, mustUseIds).length > 0
+  );
 }

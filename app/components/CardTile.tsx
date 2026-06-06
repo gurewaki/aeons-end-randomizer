@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react';
 import type { Card } from '../../lib/types';
 import { CARD_TYPE_LABEL } from '../../lib/types';
 import { PackageBadge } from './PackageBadge';
@@ -18,11 +19,19 @@ const TYPE_BADGE: Record<Card['type'], string> = {
 export function CardTile({
   card,
   isMustUse = false,
+  onReroll,
+  rerollDisabledReason,
 }: {
   card: Card;
   isMustUse?: boolean;
+  /** 指定時のみ再抽選ボタンを表示。isMustUse のカードでは無視する */
+  onReroll?: () => void;
+  /** 指定するとボタンが disabled + tooltip 表示になる */
+  rerollDisabledReason?: string;
 }) {
   const ringClass = isMustUse ? 'ring-2 ring-emerald-400/70' : '';
+  const showReroll = onReroll !== undefined && !isMustUse;
+  const rerollDisabled = Boolean(rerollDisabledReason);
 
   return (
     <div
@@ -46,6 +55,18 @@ export function CardTile({
         <span className="ml-auto text-sm font-semibold text-slate-200">
           コスト {card.cost}
         </span>
+        {showReroll && (
+          <button
+            type="button"
+            onClick={onReroll}
+            disabled={rerollDisabled}
+            aria-label="このカードを再抽選"
+            title={rerollDisabledReason ?? 'このカードを別のものに再抽選'}
+            className="rounded border border-slate-600 bg-slate-800/70 p-1 text-slate-300 hover:bg-slate-700/70 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-800/70"
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
       </div>
       <div className="text-xl font-bold leading-snug text-slate-50">
         {card.name}

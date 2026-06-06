@@ -5,12 +5,18 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { EXPANSIONS, SETUPS } from '../../lib/data';
 import type {
   Card,
+  GeneratedSupply,
   Gem,
   MarketSupply,
   Relic,
   Spell,
+  SupplyPlacement,
 } from '../../lib/types';
-import { generateMarket } from '../../lib/randomizer/generateMarket';
+import {
+  canRerollSlot,
+  generateMarket,
+  rerollSlot,
+} from '../../lib/randomizer/generateMarket';
 import { QrCode } from 'lucide-react';
 import { ExpansionSelector } from './ExpansionSelector';
 import { SetupSelector } from './SetupSelector';
@@ -20,6 +26,7 @@ import { MarketDisplay } from './MarketDisplay';
 import { ErrorBanner } from './ErrorBanner';
 import { Modal } from './Modal';
 import { SupplyShareQR } from './SupplyShareQR';
+import { SupplyRerollConfirmModal } from './SupplyRerollConfirmModal';
 
 const SHARE_PARAM_SETUP = 's';
 const SHARE_PARAM_CARDS = 'c';
@@ -76,10 +83,17 @@ export function SupplyRandomizer() {
   const [marketMustUseIds, setMarketMustUseIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  /**
+   * 自分のセッションで生成したサプライの完全情報 (再抽選に必要)。
+   * 共有 URL から復元したときは placements/poolSnapshot が無いので null。
+   */
+  const [generation, setGeneration] = useState<GeneratedSupply | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** 共有 URL から開いた状態 (受け手モード) */
   const [isShared, setIsShared] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  /** 再抽選確認モーダル: 選択中のカード (null なら閉) */
+  const [rerollTarget, setRerollTarget] = useState<Card | null>(null);
 
   const allCardsById = useMemo(() => {
     const m = new Map<string, Card>();
@@ -124,6 +138,7 @@ export function SupplyRandomizer() {
     setSelectedSetupName(setupName);
     setMarket(buildMarketFromCards(cards));
     setMarketMustUseIds(new Set());
+    setGeneration(null);
     setIsShared(true);
     // 復元はマウント時の URL を 1 回だけ反映すれば良い
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,11 +174,13 @@ export function SupplyRandomizer() {
 
     try {
       const generated = generateMarket(pool, { setup, mustUseCardIds });
-      setMarket(generated);
+      setGeneration(generated);
+      setMarket(generated.market);
       setMarketMustUseIds(new Set(mustUseCardIds));
       setIsShared(false);
-      updateShareUrl(generated, selectedSetupName);
+      updateShareUrl(generated.market, selectedSetupName);
     } catch (e) {
+      setGeneration(null);
       setMarket(null);
       setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
     }
@@ -173,8 +190,61 @@ export function SupplyRandomizer() {
   const handleExitSharedView = () => {
     setIsShared(false);
     setMarket(null);
+    setGeneration(null);
     setMarketMustUseIds(new Set());
     router.replace(pathname);
+  };
+
+  /** 🔄 ボタン押下: 確認モーダルを開く */
+  const handleRequestReroll = (card: Card) => {
+    if (!generation) return;
+    setRerollTarget(card);
+  };
+
+  /** 確認モーダルで「再抽選する」: そのスロットを 1 枚抽選し直す */
+  const handleConfirmReroll = () => {
+    if (!generation || !rerollTarget) {
+      setRerollTarget(null);
+      return;
+    }
+    const slotIndex = generation.placements.findIndex(
+      (p) => p.card.id === rerollTarget.id,
+    );
+    if (slotIndex < 0) {
+      setRerollTarget(null);
+      return;
+    }
+    try {
+      const newCard = rerollSlot(
+        generation.poolSnapshot,
+        slotIndex,
+        generation.placements,
+        generation.mustUseIds,
+      );
+      const newPlacements: SupplyPlacement[] = generation.placements.map(
+        (p, i) => (i === slotIndex ? { ...p, card: newCard } : p),
+      );
+      const newMarket: MarketSupply = {
+        gems: newPlacements.filter((p) => p.card.type === 'Gem').map((p) => p.card as Gem),
+        relics: newPlacements
+          .filter((p) => p.card.type === 'Relic')
+          .map((p) => p.card as Relic),
+        spells: newPlacements
+          .filter((p) => p.card.type === 'Spell')
+          .map((p) => p.card as Spell),
+      };
+      setGeneration({
+        ...generation,
+        market: newMarket,
+        placements: newPlacements,
+      });
+      setMarket(newMarket);
+      updateShareUrl(newMarket, generation.setup.name);
+      setRerollTarget(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '再抽選に失敗しました');
+      setRerollTarget(null);
+    }
   };
 
   /** QR コード用の絶対 URL を組み立て (market が無いときは null) */
@@ -191,6 +261,32 @@ export function SupplyRandomizer() {
   }, [market, selectedSetupName, pathname, expansionSlugById]);
 
   const canGenerate = selectedExpansionIds.size > 0 || mustUseCardIds.size > 0;
+
+  /**
+   * 各カード id について、再抽選可否を判定する。
+   * - 必ず使用カード → undefined (= ボタン非表示)
+   * - 候補が無い → 'disabled-reason' (= ボタン disabled + tooltip)
+   * - 候補がある → undefined (= ボタン有効)
+   * 注: undefined と「ボタン非表示」は CardTile 側で isMustUse プロップに従って区別される
+   */
+  const rerollDisabledByCardId = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!generation) return m;
+    for (let i = 0; i < generation.placements.length; i++) {
+      const p = generation.placements[i];
+      if (generation.mustUseIds.has(p.card.id)) continue;
+      const ok = canRerollSlot(
+        generation.poolSnapshot,
+        i,
+        generation.placements,
+        generation.mustUseIds,
+      );
+      if (!ok) {
+        m.set(p.card.id, 'このスロット制約を満たす別のカードがプールにありません');
+      }
+    }
+    return m;
+  }, [generation]);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
@@ -240,7 +336,16 @@ export function SupplyRandomizer() {
       )}
 
       <div className="mt-10 space-y-6">
-        <MarketDisplay market={market} mustUseIds={marketMustUseIds} />
+        <MarketDisplay
+          market={market}
+          mustUseIds={marketMustUseIds}
+          onRerollCard={
+            !isShared && generation ? handleRequestReroll : undefined
+          }
+          rerollDisabledByCardId={
+            !isShared && generation ? rerollDisabledByCardId : undefined
+          }
+        />
         {/* 共有ボタンは自分のセッションで生成した結果のみ表示。
             共有 URL から開いた状態 (isShared) では非表示 */}
         {market && !isShared && shareUrl && (
@@ -270,6 +375,13 @@ export function SupplyRandomizer() {
           />
         )}
       </Modal>
+
+      <SupplyRerollConfirmModal
+        open={rerollTarget !== null}
+        card={rerollTarget}
+        onCancel={() => setRerollTarget(null)}
+        onConfirm={handleConfirmReroll}
+      />
     </main>
   );
 }

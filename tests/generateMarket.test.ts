@@ -47,7 +47,7 @@ const BALANCED_SETUP: SupplySetup = {
 
 describe('generateMarket: ランダム setup', () => {
   it('Gem 3 / Relic 2 / Spell 4 を返す', () => {
-    const m = generateMarket(fxPool, {
+    const { market: m } = generateMarket(fxPool, {
       setup: RANDOM_SETUP,
       mustUseCardIds: new Set(),
     });
@@ -58,7 +58,7 @@ describe('generateMarket: ランダム setup', () => {
 
   it('各セクション内 id・name 重複なし', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPool, {
+      const { market: m } = generateMarket(fxPool, {
         setup: RANDOM_SETUP,
         mustUseCardIds: new Set(),
       });
@@ -94,7 +94,7 @@ describe('generateMarket: ランダム setup', () => {
 
   it('同名カードが複数あっても結果で 1 枚に', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(fxPoolWithDuplicateNames, {
+      const { market: m } = generateMarket(fxPoolWithDuplicateNames, {
         setup: RANDOM_SETUP,
         mustUseCardIds: new Set(),
       });
@@ -105,6 +105,27 @@ describe('generateMarket: ランダム setup', () => {
       ];
       expect(new Set(allNames).size).toBe(allNames.length);
     }
+  });
+
+  it('placements が setup.slots と同じ順序で各スロットに 1 枚返る', () => {
+    const gen = generateMarket(fxPool, {
+      setup: RANDOM_SETUP,
+      mustUseCardIds: new Set(),
+    });
+    expect(gen.placements).toHaveLength(RANDOM_SETUP.slots.length);
+    for (let i = 0; i < RANDOM_SETUP.slots.length; i++) {
+      expect(gen.placements[i].slot).toBe(RANDOM_SETUP.slots[i]);
+      expect(gen.placements[i].card.type).toBe(RANDOM_SETUP.slots[i].type);
+    }
+  });
+
+  it('poolSnapshot は dedup 済みで同名カードを 1 枚に圧縮している', () => {
+    const gen = generateMarket(fxPoolWithDuplicateNames, {
+      setup: RANDOM_SETUP,
+      mustUseCardIds: new Set(),
+    });
+    const snapshotNames = gen.poolSnapshot.map((c) => c.name);
+    expect(new Set(snapshotNames).size).toBe(snapshotNames.length);
   });
 });
 
@@ -131,7 +152,7 @@ describe('generateMarket: バランス setup (コスト制約)', () => {
 
   it('Gem スロット: 1 枚目 cost ≤ 3 / 2 枚目 cost = 4 / 3 枚目 cost ≥ 5', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(balancedPool, {
+      const { market: m } = generateMarket(balancedPool, {
         setup: BALANCED_SETUP,
         mustUseCardIds: new Set(),
       });
@@ -144,7 +165,7 @@ describe('generateMarket: バランス setup (コスト制約)', () => {
 
   it('Relic スロット: 1 枚目 cost ≤ 3 / 2 枚目 cost ≥ 4', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(balancedPool, {
+      const { market: m } = generateMarket(balancedPool, {
         setup: BALANCED_SETUP,
         mustUseCardIds: new Set(),
       });
@@ -156,7 +177,7 @@ describe('generateMarket: バランス setup (コスト制約)', () => {
 
   it('Spell スロット: 2 枚 cost ≤ 4 / 2 枚 cost ≥ 5', () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(balancedPool, {
+      const { market: m } = generateMarket(balancedPool, {
         setup: BALANCED_SETUP,
         mustUseCardIds: new Set(),
       });
@@ -205,7 +226,7 @@ describe('generateMarket: mustUseCardIds + setup', () => {
       (c) => c.type === 'Gem' && c.cost === 6,
     )!;
     for (let i = 0; i < ITERATIONS; i++) {
-      const m = generateMarket(balancedPool, {
+      const { market: m } = generateMarket(balancedPool, {
         setup: BALANCED_SETUP,
         mustUseCardIds: new Set([mustGem4.id, mustGem6.id]),
       });

@@ -223,4 +223,24 @@ export interface MarketSupply {
   spells: Spell[];
 }
 
+export interface SupplyPlacement {
+  slot: SetupSlot;
+  card: Card;
+}
+
+/**
+ * generateMarket の返り値。再抽選するために setup スロット情報と
+ * 生成時プール (dedup 後) を保持する。
+ */
+export interface GeneratedSupply {
+  market: MarketSupply;
+  /** setup.slots と同じ順序の配置情報 (各スロットに 1 枚) */
+  placements: SupplyPlacement[];
+  /** 生成時の dedup 済みプール。再抽選で同じプールから引くために凍結 */
+  poolSnapshot: readonly Card[];
+  /** 生成時の必ず使用 ID。再抽選時に常に除外する */
+  mustUseIds: ReadonlySet<string>;
+  setup: SupplySetup;
+}
+
 export const MARKET_COMPOSITION = { Gem: 3, Relic: 2, Spell: 4 } as const;
