@@ -31,6 +31,13 @@ import { SupplyRerollConfirmModal } from './SupplyRerollConfirmModal';
 const SHARE_PARAM_SETUP = 's';
 const SHARE_PARAM_CARDS = 'c';
 
+/**
+ * next.config.ts で公開した basePath (GitHub Pages では '/aeons-end-randomizer'、
+ * 開発時は '')。usePathname() はこれを含まないため、共有 URL や
+ * window.history.replaceState で実 URL を組み立てるときに前置する必要がある。
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 /** englishName から URL slug を作る (空白除去のみ。"Core Box" → "CoreBox") */
 function packSlug(englishName: string): string {
   return englishName.replace(/\s+/g, '');
@@ -155,7 +162,11 @@ export function SupplyRandomizer() {
       SHARE_PARAM_CARDS,
       serializeMarketTokens(m, expansionSlugById).join(','),
     );
-    window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+    window.history.replaceState(
+      null,
+      '',
+      `${BASE_PATH}${pathname}?${params.toString()}`,
+    );
   };
 
   const handleGenerate = () => {
@@ -260,7 +271,7 @@ export function SupplyRandomizer() {
       SHARE_PARAM_CARDS,
       serializeMarketTokens(market, expansionSlugById).join(','),
     );
-    return `${window.location.origin}${pathname}?${params.toString()}`;
+    return `${window.location.origin}${BASE_PATH}${pathname}?${params.toString()}`;
   }, [market, selectedSetupName, pathname, expansionSlugById]);
 
   const canGenerate = selectedExpansionIds.size > 0 || mustUseCardIds.size > 0;
