@@ -351,23 +351,23 @@ export function TurnOrderRandomizer() {
                     : 'cursor-not-allowed opacity-60'
                 }`}
               >
-                {/* h-44 で revealing 時の最大スケール (1.4) でもクリップしない高さを確保 */}
-                <div className="flex h-44 items-center justify-center">
+                {/* h-72 で revealing 時の最大スケール (1.4 × h-48 = 約 269px) でもクリップしない高さを確保 */}
+                <div className="flex h-72 items-center justify-center">
                   {revealing ? (
-                    <div key={revealing.id} className="relative h-32 w-24">
+                    <div key={revealing.id} className="relative h-48 w-36">
                       {/* Phase 1: カード裏が震える */}
                       <div className="reveal-suspense absolute inset-0 flex items-center justify-center">
-                        <TurnOrderCardBack />
+                        <TurnOrderCardBack size="large" />
                       </div>
                       {/* Phase 2: カード表がポップ */}
                       <div className="reveal-face absolute inset-0 flex items-center justify-center">
-                        <TurnOrderCardFace card={revealing} />
+                        <TurnOrderCardFace card={revealing} size="large" />
                       </div>
                     </div>
                   ) : showBack ? (
-                    <TurnOrderCardBack />
+                    <TurnOrderCardBack size="large" />
                   ) : (
-                    <div className="flex h-32 w-24 items-center justify-center rounded-md border-2 border-dashed border-slate-700 text-xs text-slate-500">
+                    <div className="flex h-48 w-36 items-center justify-center rounded-md border-2 border-dashed border-slate-700 text-sm text-slate-500">
                       空
                     </div>
                   )}

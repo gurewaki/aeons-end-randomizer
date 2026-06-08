@@ -50,18 +50,43 @@ function cardFace(card: TurnOrderCard): {
   }
 }
 
+type CardSize = 'small' | 'normal' | 'large';
+
+const PAIR_SIZE: Record<CardSize, string> = {
+  small: 'h-20 w-14 text-xl',
+  normal: 'h-32 w-24 text-4xl',
+  large: 'h-48 w-36 text-6xl',
+};
+
+const FACE_SIZE: Record<CardSize, string> = {
+  small: 'h-20 w-14 text-2xl',
+  normal: 'h-32 w-24 text-5xl',
+  large: 'h-48 w-36 text-7xl',
+};
+
+const BACK_SIZE: Record<CardSize, string> = {
+  small: 'h-20 w-14 text-[10px]',
+  normal: 'h-32 w-24 text-xs',
+  large: 'h-48 w-36 text-sm',
+};
+
+const BACK_ICON_SIZE: Record<CardSize, string> = {
+  small: 'text-xl',
+  normal: 'text-2xl',
+  large: 'text-4xl',
+};
+
 /** ペアカードを縦半分割で描画 */
 function PairFace({
   card,
   size,
 }: {
   card: TurnOrderCard;
-  size: 'normal' | 'small';
+  size: CardSize;
 }) {
   const [top, bottom] = card.pairValues as [PlayerValue, PlayerValue];
   const chosen = card.revealedAs;
-  const sizeBox =
-    size === 'small' ? 'h-20 w-14 text-xl' : 'h-32 w-24 text-4xl';
+  const sizeBox = PAIR_SIZE[size];
   const dim = (v: PlayerValue) =>
     chosen !== undefined && chosen !== v ? 'opacity-25' : '';
   return (
@@ -83,9 +108,9 @@ function PairFace({
   );
 }
 
-/** 共通の表サイズ・形状 */
+/** 共通の表シェイプ (サイズ以外) */
 const FACE_BASE =
-  'flex h-32 w-24 flex-col items-center justify-center rounded-md border-2 shadow-md select-none';
+  'flex flex-col items-center justify-center rounded-md border-2 shadow-md select-none';
 
 /** カード表 (公開済み) */
 export function TurnOrderCardFace({
@@ -93,20 +118,14 @@ export function TurnOrderCardFace({
   size = 'normal',
 }: {
   card: TurnOrderCard;
-  size?: 'normal' | 'small';
+  size?: CardSize;
 }) {
   if (card.kind === 'pair') {
     return <PairFace card={card} size={size} />;
   }
   const face = cardFace(card);
-  const sizeClass =
-    size === 'small'
-      ? 'h-20 w-14 text-2xl'
-      : 'h-32 w-24 text-5xl';
   return (
-    <div
-      className={`${FACE_BASE.replace('h-32 w-24', '')} ${sizeClass} ${face.frame}`}
-    >
+    <div className={`${FACE_BASE} ${FACE_SIZE[size]} ${face.frame}`}>
       <span className="font-bold leading-none">{face.label}</span>
       {face.sub && (
         <span className="mt-1 text-[10px] font-medium opacity-90">
@@ -121,17 +140,13 @@ export function TurnOrderCardFace({
 export function TurnOrderCardBack({
   size = 'normal',
 }: {
-  size?: 'normal' | 'small';
+  size?: CardSize;
 }) {
-  const sizeClass =
-    size === 'small'
-      ? 'h-20 w-14 text-[10px]'
-      : 'h-32 w-24 text-xs';
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-md border-2 border-slate-500 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-slate-400 shadow-md ${sizeClass}`}
+      className={`flex flex-col items-center justify-center rounded-md border-2 border-slate-500 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-slate-400 shadow-md ${BACK_SIZE[size]}`}
     >
-      <span className="text-2xl">✦</span>
+      <span className={BACK_ICON_SIZE[size]}>✦</span>
       <span className="mt-1 tracking-widest">TURN</span>
     </div>
   );
