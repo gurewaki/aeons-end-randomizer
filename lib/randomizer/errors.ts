@@ -105,3 +105,43 @@ export class NoEligibleSeasonError extends Error {
     this.name = 'NoEligibleSeasonError';
   }
 }
+
+// --- Nemesis deck (トライアル機能) ---
+
+import type { NemesisTier } from '../types';
+
+export class NemesisBossNotSelectedError extends Error {
+  constructor() {
+    super('ネメシス (ボス) を選択してください');
+    this.name = 'NemesisBossNotSelectedError';
+  }
+}
+
+export class NemesisBasicSourceNotSelectedError extends Error {
+  constructor(public readonly tier: NemesisTier) {
+    super(`階層 ${tier} の Basic カード供給拡張を選択してください`);
+    this.name = 'NemesisBasicSourceNotSelectedError';
+  }
+}
+
+export class InsufficientNemesisBasicError extends Error {
+  constructor(
+    public readonly tier: NemesisTier,
+    public readonly required: number,
+    public readonly available: number,
+  ) {
+    super(
+      `階層 ${tier} の Basic カードが不足しています: 必要 ${required} 枚 / 利用可能 ${available} 枚`,
+    );
+    this.name = 'InsufficientNemesisBasicError';
+  }
+}
+
+export class NemesisDeckExpeditionNotSupportedError extends Error {
+  constructor() {
+    super(
+      '探索行モード時のネメシスデッキ機能は v1 では未対応です',
+    );
+    this.name = 'NemesisDeckExpeditionNotSupportedError';
+  }
+}

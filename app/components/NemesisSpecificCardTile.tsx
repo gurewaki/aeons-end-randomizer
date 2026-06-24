@@ -16,8 +16,12 @@ const TYPE_BADGE: Record<NonNullable<NemesisSpecificCard['type']>, string> = {
 
 export function NemesisSpecificCardTile({
   card,
+  nemesisName,
 }: {
   card: NemesisSpecificCard;
+  /** ネメシス名 (実カードを探す手がかりとして表示)。
+   *  図鑑などボスコンテキスト内で使う場合は未指定で良い */
+  nemesisName?: string;
 }) {
   const frame = card.type
     ? TYPE_STYLES[card.type]
@@ -31,6 +35,14 @@ export function NemesisSpecificCardTile({
           >
             {NEMESIS_CARD_TYPE_LABEL[card.type]}
             {card.typeNote && `：${card.typeNote}`}
+          </span>
+        )}
+        {nemesisName && (
+          <span
+            className="rounded border border-red-500/60 bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-200"
+            title="このカードを持つネメシス"
+          >
+            {nemesisName}
           </span>
         )}
         {card.tier !== undefined && (

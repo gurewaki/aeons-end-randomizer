@@ -38,10 +38,30 @@ type RevealIntent =
   | { kind: 'returnTop' }
   | { kind: 'returnBottom' };
 
-export function TurnOrderRandomizer() {
-  const [settings, setSettings] = useState<TurnOrderSettings>(DEFAULT_SETTINGS);
+export function TurnOrderRandomizer({
+  settings: controlledSettings,
+  onSettingsChange: controlledOnChange,
+  hideHeader = false,
+  hideSettings = false,
+}: {
+  /** 親が settings を制御する場合に渡す (未指定なら内部 state) */
+  settings?: TurnOrderSettings;
+  onSettingsChange?: (next: TurnOrderSettings) => void;
+  /** トライアル画面など、ヘッダーを外側で出すケースで true */
+  hideHeader?: boolean;
+  /** トライアル画面など、設定パネルを外側で出すケースで true */
+  hideSettings?: boolean;
+} = {}) {
+  const [internalSettings, setInternalSettings] =
+    useState<TurnOrderSettings>(DEFAULT_SETTINGS);
+  const settings = controlledSettings ?? internalSettings;
+  const setSettings = (next: TurnOrderSettings) => {
+    if (controlledOnChange) controlledOnChange(next);
+    else setInternalSettings(next);
+  };
+
   const [state, setState] = useState<TurnOrderState>(() =>
-    buildInitialState(DEFAULT_SETTINGS),
+    buildInitialState(settings),
   );
   const { setInProgress } = useTurnOrderProgress();
 
@@ -309,18 +329,27 @@ export function TurnOrderRandomizer() {
     setReorderOpen(true);
   };
 
-  return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:py-12">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-50 sm:text-3xl">
-          ターン順カードシャッフラ
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          プレイヤー値とオプションを設定すると山が組まれ、各操作で公開できます
-        </p>
-      </header>
+  const containerClass = hideHeader
+    ? 'space-y-6'
+    : 'mx-auto max-w-5xl space-y-6 px-4 py-8 sm:py-12';
+  const Container = hideHeader ? 'div' : 'main';
 
-      <TurnOrderSettingsPanel settings={settings} onChange={handleSettingsChange} />
+  return (
+    <Container className={containerClass}>
+      {!hideHeader && (
+        <header>
+          <h1 className="text-2xl font-bold text-slate-50 sm:text-3xl">
+            ターン順カードシャッフラ
+          </h1>
+          <p className="mt-2 text-sm text-slate-400">
+            プレイヤー値とオプションを設定すると山が組まれ、各操作で公開できます
+          </p>
+        </header>
+      )}
+
+      {!hideSettings && (
+        <TurnOrderSettingsPanel settings={settings} onChange={handleSettingsChange} />
+      )}
 
       {/* デッキ + 公開アニメーション */}
       <section className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
@@ -496,6 +525,6 @@ export function TurnOrderRandomizer() {
         onCancel={() => setReturnPending(null)}
         onConfirm={confirmReturnDiscard}
       />
-    </main>
+    </Container>
   );
 }

@@ -244,3 +244,58 @@ export interface GeneratedSupply {
 }
 
 export const MARKET_COMPOSITION = { Gem: 3, Relic: 2, Spell: 4 } as const;
+
+// --- Nemesis deck (ターン順+ネメシストライアル機能) -------------------------
+
+/** ネメシスデッキの階層 (1 が最上位) */
+export type NemesisTier = 1 | 2 | 3;
+
+/** デッキ内に入りうるカード。基本/上級基本 (NemesisCard) と ボス固有 (NemesisSpecificCard) を統合 */
+export type NemesisDeckCard =
+  | { source: 'basic'; card: NemesisCard }
+  | { source: 'specific'; card: NemesisSpecificCard };
+
+/** プレイヤー人数 (turn-order の playerValues.length と一致) */
+export type NemesisPlayerCount = 1 | 2 | 3 | 4;
+
+export interface NemesisDeckSetup {
+  bossId: string;
+  /** tier (1|2|3) → Basic カード供給拡張 id (択一) */
+  basicSourceExpansionByTier: Record<NemesisTier, string>;
+  playerCount: NemesisPlayerCount;
+}
+
+export interface NemesisDeckPile {
+  tier: NemesisTier;
+  /** 山札の一番上が index 0 */
+  cards: ReadonlyArray<NemesisDeckCard>;
+}
+
+export interface NemesisDeckDraw {
+  tier: NemesisTier;
+  card: NemesisDeckCard;
+}
+
+export interface NemesisDeckState {
+  setup: NemesisDeckSetup;
+  /** tier1, tier2, tier3 の順 */
+  piles: readonly [NemesisDeckPile, NemesisDeckPile, NemesisDeckPile];
+  /** ドロー履歴 (最新が末尾) */
+  drawHistory: readonly NemesisDeckDraw[];
+}
+
+/**
+ * Basic カード枚数公式 (Aeons End 本則準拠 / プレイヤー人数 → tier 別 Basic 枚数)。
+ * Specific カードはこの枚数に加算される。
+ */
+export const NEMESIS_BASIC_COUNT_BY_PLAYER: Record<
+  NemesisPlayerCount,
+  Record<NemesisTier, number>
+> = {
+  1: { 1: 1, 2: 3, 3: 7 },
+  2: { 1: 3, 2: 5, 3: 7 },
+  3: { 1: 5, 2: 6, 3: 7 },
+  4: { 1: 8, 2: 7, 3: 7 },
+};
+
+export const NEMESIS_TIERS: readonly NemesisTier[] = [1, 2, 3] as const;

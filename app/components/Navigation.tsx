@@ -10,6 +10,7 @@ const NAV_ITEMS: { href: string; label: string }[] = [
   { href: '/nemesis', label: 'ネメシス' },
   { href: '/player', label: 'プレイヤー' },
   { href: '/turn-order', label: 'ターン順' },
+  { href: '/turn-order-trial', label: 'ターン順+ネメシス (β)' },
   { href: '/library', label: '図鑑' },
 ];
 
